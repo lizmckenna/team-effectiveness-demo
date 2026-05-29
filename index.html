@@ -1,0 +1,1834 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Team Effectiveness Instrument — Civic Power Lab</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,opsz,wght@0,8..60,300..700;1,8..60,300..700&family=Work+Sans:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+<style>
+  :root {
+    --paper: #efe6d1;
+    --paper-tint: #f5eedb;
+    --cream-2: #e6dcc2;
+    --rule: #cec2a8;
+    --rule-soft: #ddd2b6;
+    --ink: #171514;
+    --ink-2: #332f2b;
+    --mute: #6a6256;
+    --cobalt: #13306b;
+    --cobalt-deep: #0a204e;
+    --cobalt-soft: #4a6396;
+    --terracotta: #b7432b;
+    --terracotta-soft: #d2735d;
+    --olive: #6b7a3a;
+    --amber: #c89342;
+    --slate: #4a5566;
+    --teal: #0d3d45;
+    --signal-green: #4a7c3a;
+    --signal-yellow: #c89342;
+    --signal-red: #b7432b;
+    --serif: "Source Serif 4", Georgia, serif;
+    --sans: "Work Sans", -apple-system, system-ui, sans-serif;
+    --mono: "JetBrains Mono", ui-monospace, Menlo, monospace;
+  }
+
+  * { box-sizing: border-box; }
+  html, body { height: 100%; margin: 0; }
+  body {
+    font-family: var(--sans);
+    font-weight: 300;
+    background: var(--paper);
+    color: var(--ink);
+    -webkit-font-smoothing: antialiased;
+    font-size: 14px;
+    line-height: 1.5;
+  }
+
+  /* ===== App shell ===== */
+  .app { display: flex; flex-direction: column; height: 100vh; }
+  .topbar {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 14px 24px;
+    border-bottom: 1px solid var(--rule);
+    background: var(--paper);
+  }
+  .wordmark {
+    font-family: var(--mono); font-size: 11px; font-weight: 500;
+    letter-spacing: 0.18em; text-transform: uppercase; color: var(--cobalt);
+  }
+  .wordmark .dot { color: var(--terracotta); margin: 0 6px; }
+  .title-block { display: flex; align-items: baseline; gap: 14px; }
+  .badge {
+    font-family: var(--mono); font-size: 10px; font-weight: 500;
+    letter-spacing: 0.1em; text-transform: uppercase;
+    background: var(--terracotta); color: var(--paper);
+    padding: 4px 8px; border-radius: 2px;
+  }
+  .badge-crm {
+    font-family: var(--mono); font-size: 9px; font-weight: 500;
+    letter-spacing: 0.08em; text-transform: uppercase;
+    background: var(--teal); color: var(--paper);
+    padding: 2px 5px; border-radius: 2px;
+    vertical-align: middle;
+  }
+  .badge-self {
+    font-family: var(--mono); font-size: 9px; font-weight: 500;
+    letter-spacing: 0.08em; text-transform: uppercase;
+    background: transparent; color: var(--mute);
+    border: 1px solid var(--rule);
+    padding: 1px 5px; border-radius: 2px;
+    vertical-align: middle;
+  }
+  .top-actions { display: flex; gap: 8px; }
+
+  /* ===== Layout ===== */
+  .pane-wrap { flex: 1; display: grid; grid-template-columns: minmax(460px, 540px) 1fr; min-height: 0; }
+  .left-pane { border-right: 1px solid var(--rule); overflow-y: auto; background: var(--paper-tint); }
+  .right-pane { position: relative; overflow: hidden; background: var(--paper); }
+
+  /* ===== Sections ===== */
+  .section { border-bottom: 1px solid var(--rule-soft); }
+  .section-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 14px 20px; cursor: pointer; user-select: none;
+  }
+  .section-header h2 {
+    margin: 0;
+    font-family: var(--mono); font-size: 10px; font-weight: 500;
+    letter-spacing: 0.15em; text-transform: uppercase; color: var(--cobalt);
+  }
+  .section-header .caret { font-family: var(--mono); font-size: 11px; color: var(--mute); }
+  .section-body { padding: 0 20px 20px; }
+  .section-body p.intro {
+    font-family: var(--serif); font-size: 13px; line-height: 1.55; color: var(--ink-2);
+    margin: 0 0 14px;
+  }
+
+  /* ===== Form ===== */
+  .field { margin-bottom: 12px; }
+  .field label {
+    display: flex; align-items: center; gap: 6px;
+    font-family: var(--mono); font-size: 9.5px; font-weight: 500;
+    letter-spacing: 0.12em; text-transform: uppercase; color: var(--mute);
+    margin-bottom: 4px;
+  }
+  .field label .lbl-text { flex: 1; }
+  .field input, .field select, .field textarea {
+    width: 100%; padding: 7px 9px;
+    background: var(--paper);
+    border: 1px solid var(--rule);
+    font-family: var(--sans); font-size: 13px; color: var(--ink);
+    border-radius: 2px;
+    transition: border-color 0.15s;
+  }
+  .field input.crm-filled, .field select.crm-filled, .field textarea.crm-filled {
+    background: #e9f0ee;
+    border-color: var(--teal);
+  }
+  .field textarea { resize: vertical; min-height: 50px; font-family: var(--sans); }
+  .field input:focus, .field select:focus, .field textarea:focus {
+    outline: none; border-color: var(--cobalt);
+    box-shadow: 0 0 0 1px var(--cobalt);
+  }
+  .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .field-row-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
+
+  /* Subsection within form */
+  .form-subsection {
+    border: 1px solid var(--rule-soft);
+    background: var(--paper);
+    border-radius: 2px;
+    padding: 12px 14px 4px;
+    margin-bottom: 14px;
+  }
+  .form-subsection-title {
+    font-family: var(--mono); font-size: 9.5px; font-weight: 500;
+    letter-spacing: 0.14em; text-transform: uppercase;
+    color: var(--cobalt);
+    margin: 0 0 4px;
+  }
+  .form-subsection-sub {
+    font-family: var(--serif); font-style: italic; font-size: 12px;
+    color: var(--mute);
+    margin: 0 0 12px;
+  }
+
+  /* Likert */
+  .likert {
+    display: grid; grid-template-columns: repeat(5, 1fr); gap: 4px;
+  }
+  .likert button {
+    font-family: var(--mono); font-size: 11px; font-weight: 500;
+    padding: 7px 0;
+    background: var(--paper); color: var(--ink-2);
+    border: 1px solid var(--rule); border-radius: 2px;
+    cursor: pointer;
+    transition: background 0.12s, color 0.12s, border-color 0.12s;
+  }
+  .likert button:hover { border-color: var(--cobalt-soft); }
+  .likert button.selected {
+    background: var(--cobalt); color: var(--paper); border-color: var(--cobalt);
+  }
+  .likert-scale {
+    display: flex; justify-content: space-between;
+    font-family: var(--mono); font-size: 9px;
+    color: var(--mute); letter-spacing: 0.08em;
+    margin-top: 3px; text-transform: uppercase;
+  }
+
+  /* Yes/No toggle */
+  .yn {
+    display: inline-flex; gap: 0;
+    border: 1px solid var(--rule); border-radius: 2px; overflow: hidden;
+  }
+  .yn button {
+    background: var(--paper); color: var(--ink-2);
+    border: none;
+    font-family: var(--mono); font-size: 10px; font-weight: 500;
+    letter-spacing: 0.12em; text-transform: uppercase;
+    padding: 6px 14px;
+    cursor: pointer;
+  }
+  .yn button + button { border-left: 1px solid var(--rule); }
+  .yn button.selected.yes { background: var(--cobalt); color: var(--paper); }
+  .yn button.selected.no { background: var(--terracotta); color: var(--paper); }
+
+  /* Check group */
+  .check-group { display: flex; flex-direction: column; gap: 6px; }
+  .check-row {
+    display: grid; grid-template-columns: 18px 1fr;
+    align-items: start; gap: 10px;
+    padding: 9px 11px;
+    border: 1px solid var(--rule); border-radius: 2px;
+    background: var(--paper); cursor: pointer;
+    transition: border-color 0.12s, background 0.12s;
+  }
+  .check-row:hover { border-color: var(--cobalt-soft); }
+  .check-row.selected { background: #e9e0ca; border-color: var(--cobalt); }
+  .check-row input {
+    margin: 0; accent-color: var(--cobalt);
+    width: 14px; height: 14px; margin-top: 2px;
+  }
+  .check-row .check-text {
+    font-family: var(--sans); font-size: 13px; line-height: 1.45; color: var(--ink);
+    min-width: 0;
+  }
+
+  /* Buttons */
+  .btn {
+    font-family: var(--mono); font-size: 10px; font-weight: 500;
+    letter-spacing: 0.12em; text-transform: uppercase;
+    padding: 7px 14px; border-radius: 2px; cursor: pointer; border: 1px solid;
+    transition: background 0.15s, color 0.15s;
+  }
+  .btn-primary { background: var(--cobalt); color: var(--paper); border-color: var(--cobalt); }
+  .btn-primary:hover { background: var(--cobalt-deep); border-color: var(--cobalt-deep); }
+  .btn-ghost { background: transparent; color: var(--cobalt); border-color: var(--rule); }
+  .btn-ghost:hover { background: var(--cream-2); border-color: var(--cobalt); }
+  .btn-danger { background: transparent; color: var(--terracotta); border-color: var(--terracotta); }
+  .btn-danger:hover { background: var(--terracotta); color: var(--paper); }
+
+  .btn-row { display: flex; gap: 8px; margin-top: 14px; }
+
+  /* ===== Team list ===== */
+  .team-list { display: flex; flex-direction: column; gap: 8px; }
+  .team-card {
+    border: 1px solid var(--rule);
+    background: var(--paper);
+    border-radius: 2px;
+    padding: 11px 13px;
+    transition: border-color 0.15s;
+  }
+  .team-card:hover { border-color: var(--cobalt-soft); }
+  .team-card.editing { border-color: var(--cobalt); }
+  .team-card-head {
+    display: flex; align-items: flex-start; gap: 10px;
+  }
+  .team-color-chip {
+    width: 10px; height: 10px; border-radius: 50%; margin-top: 5px; flex-shrink: 0;
+    border: 1px solid rgba(0,0,0,0.15);
+  }
+  .team-summary { flex: 1; min-width: 0; }
+  .team-name {
+    font-family: var(--serif); font-size: 14px; font-weight: 500;
+    color: var(--ink); line-height: 1.2;
+  }
+  .team-meta {
+    font-family: var(--sans); font-size: 11.5px; color: var(--mute);
+    margin-top: 2px;
+  }
+  .team-scoreline {
+    font-family: var(--mono); font-size: 9.5px; font-weight: 500;
+    color: var(--cobalt); letter-spacing: 0.1em;
+    margin-top: 4px;
+    display: flex; gap: 12px; flex-wrap: wrap;
+  }
+  .team-scoreline .lbl { color: var(--mute); }
+  .team-actions { display: flex; gap: 6px; }
+  .icon-btn {
+    background: transparent; border: none; cursor: pointer;
+    color: var(--mute); font-family: var(--mono); font-size: 10px;
+    padding: 2px 4px; letter-spacing: 0.1em;
+  }
+  .icon-btn:hover { color: var(--cobalt); }
+  .icon-btn.delete:hover { color: var(--terracotta); }
+  .team-edit-body { margin-top: 12px; padding-top: 12px; border-top: 1px dashed var(--rule); }
+
+  /* ===== Tabs ===== */
+  .tabs {
+    position: absolute; top: 0; left: 0; right: 0; z-index: 3;
+    display: flex; gap: 0;
+    background: var(--paper);
+    border-bottom: 1px solid var(--rule);
+    padding: 0 20px;
+  }
+  .tab {
+    font-family: var(--mono); font-size: 10px; font-weight: 500;
+    letter-spacing: 0.14em; text-transform: uppercase;
+    color: var(--mute);
+    padding: 14px 18px;
+    background: transparent; border: none; cursor: pointer;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -1px;
+  }
+  .tab:hover { color: var(--ink-2); }
+  .tab.active { color: var(--cobalt); border-bottom-color: var(--cobalt); }
+  .view-host {
+    position: absolute; top: 41px; left: 0; right: 0; bottom: 0;
+    overflow-y: auto;
+    padding: 30px;
+  }
+
+  /* ===== Scorecard view ===== */
+  .scorecard-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(310px, 1fr));
+    gap: 18px;
+  }
+  .score-card {
+    border: 1px solid var(--rule);
+    background: var(--paper-tint);
+    border-radius: 2px;
+    padding: 16px 18px;
+    display: flex; flex-direction: column; gap: 10px;
+  }
+  .score-card-head {
+    display: flex; align-items: flex-start; justify-content: space-between;
+    gap: 10px;
+  }
+  .score-card-title {
+    font-family: var(--serif); font-size: 16px; font-weight: 500;
+    color: var(--ink); line-height: 1.2;
+  }
+  .score-card-meta {
+    font-family: var(--sans); font-size: 11.5px; color: var(--mute);
+    margin-top: 2px;
+  }
+  .health-index {
+    font-family: var(--mono); font-size: 22px; font-weight: 500;
+    line-height: 1;
+  }
+  .health-index.green { color: var(--signal-green); }
+  .health-index.yellow { color: var(--signal-yellow); }
+  .health-index.red { color: var(--signal-red); }
+  .health-index-lbl {
+    font-family: var(--mono); font-size: 9px;
+    letter-spacing: 0.12em; text-transform: uppercase;
+    color: var(--mute);
+    margin-top: 2px;
+  }
+  /* GitHub-style contribution grid */
+  .contrib-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 12px);
+    grid-auto-rows: 12px;
+    gap: 3px;
+  }
+  .contrib-cell {
+    width: 12px; height: 12px;
+    background: var(--cream-2);
+    border-radius: 2px;
+    border: 1px solid rgba(0,0,0,0.04);
+  }
+  .contrib-cell.green  { background: var(--signal-green); }
+  .contrib-cell.yellow { background: var(--signal-yellow); }
+  .contrib-cell.red    { background: var(--signal-red); }
+  .contrib-cell.dim    { background: rgba(74,124,58,0.18); }
+  .contrib-row-label {
+    font-family: var(--mono); font-size: 8.5px; font-weight: 500;
+    letter-spacing: 0.1em; text-transform: uppercase;
+    color: var(--mute);
+    line-height: 14px;
+  }
+  .contrib-wrap {
+    display: grid; grid-template-columns: 24px auto; gap: 8px; align-items: center;
+  }
+  .contrib-rows { display: flex; flex-direction: column; gap: 3px; }
+  .contrib-row {
+    display: grid; grid-template-columns: 30px repeat(7, 12px) 30px;
+    gap: 4px; align-items: center;
+  }
+  .contrib-row .contrib-row-num {
+    font-family: var(--mono); font-size: 10px; font-weight: 500;
+    color: var(--ink-2); text-align: right;
+  }
+  .score-radar { display: flex; justify-content: center; }
+  .score-bars { display: flex; flex-direction: column; gap: 7px; }
+  .score-bar-row {
+    display: grid; grid-template-columns: 110px 1fr 38px;
+    gap: 8px; align-items: center;
+  }
+  .score-bar-lbl {
+    font-family: var(--mono); font-size: 9.5px; font-weight: 500;
+    letter-spacing: 0.1em; text-transform: uppercase;
+    color: var(--ink-2);
+  }
+  .score-bar-track {
+    height: 8px; background: var(--cream-2);
+    border-radius: 1px; overflow: hidden;
+  }
+  .score-bar-fill { height: 100%; background: var(--signal-green); }
+  .score-bar-fill.yellow { background: var(--signal-yellow); }
+  .score-bar-fill.red    { background: var(--signal-red); }
+  .score-bar-num {
+    font-family: var(--mono); font-size: 11px; font-weight: 500;
+    color: var(--ink-2); text-align: right;
+  }
+  .score-bar-num.green  { color: var(--signal-green); }
+  .score-bar-num.yellow { color: var(--signal-yellow); }
+  .score-bar-num.red    { color: var(--signal-red); }
+  .score-tags {
+    display: flex; flex-wrap: wrap; gap: 4px;
+    margin-top: 2px;
+  }
+  .score-tag {
+    font-family: var(--mono); font-size: 9px; font-weight: 500;
+    letter-spacing: 0.08em; text-transform: uppercase;
+    padding: 2px 6px; border-radius: 2px;
+    border: 1px solid var(--rule); color: var(--mute);
+    background: var(--paper);
+  }
+  .score-tag.flag { color: var(--terracotta); border-color: var(--terracotta-soft); }
+  .score-tag.ok { color: var(--olive); border-color: var(--olive); }
+  .sortbar {
+    display: flex; align-items: center; gap: 10px;
+    font-family: var(--mono); font-size: 10px; font-weight: 500;
+    letter-spacing: 0.12em; text-transform: uppercase;
+    color: var(--mute);
+    margin-bottom: 18px;
+  }
+  .sortbar select {
+    font-family: var(--mono); font-size: 10px;
+    background: var(--paper); border: 1px solid var(--rule);
+    padding: 4px 6px; border-radius: 2px;
+    color: var(--ink);
+  }
+
+  /* ===== Effectiveness grid (2x2) ===== */
+  .grid-stage {
+    width: 100%; height: 100%;
+    display: flex; align-items: center; justify-content: center;
+    position: relative;
+    padding: 30px;
+  }
+  .grid-svg { max-width: 100%; max-height: 100%; cursor: default; }
+  .grid-quad-label {
+    font-family: var(--mono); font-size: 9.5px; font-weight: 500;
+    letter-spacing: 0.14em; text-transform: uppercase; fill: var(--mute);
+  }
+  .grid-quad-strategy {
+    font-family: var(--serif); font-size: 12px; font-style: italic;
+    fill: var(--ink-2);
+  }
+  .grid-axis-label {
+    font-family: var(--mono); font-size: 10px; font-weight: 500;
+    letter-spacing: 0.16em; text-transform: uppercase; fill: var(--cobalt);
+  }
+  .grid-dot { cursor: grab; }
+  .grid-dot.dragging { cursor: grabbing; }
+  .node-label {
+    font-family: var(--sans); font-size: 10.5px; font-weight: 400;
+    fill: var(--ink); pointer-events: none;
+    paint-order: stroke; stroke: rgba(239,230,209,0.85); stroke-width: 3px;
+  }
+  .legend {
+    position: absolute; top: 18px; right: 18px;
+    background: rgba(245, 238, 219, 0.96);
+    border: 1px solid var(--rule);
+    border-radius: 2px;
+    padding: 14px 16px;
+    max-width: 260px;
+    pointer-events: none;
+    z-index: 2;
+  }
+  .legend h3 {
+    margin: 0 0 8px;
+    font-family: var(--mono); font-size: 9.5px; font-weight: 500;
+    letter-spacing: 0.14em; text-transform: uppercase; color: var(--cobalt);
+  }
+  .legend h3:not(:first-child) { margin-top: 12px; }
+  .legend .item {
+    display: flex; align-items: center; gap: 8px;
+    font-size: 11.5px; color: var(--ink-2);
+    padding: 2px 0;
+  }
+  .map-tooltip {
+    position: absolute;
+    background: var(--ink); color: var(--paper);
+    padding: 8px 11px; border-radius: 2px;
+    pointer-events: none;
+    font-size: 11.5px; line-height: 1.4;
+    max-width: 280px;
+    z-index: 10;
+  }
+  .map-tooltip .tt-name { font-family: var(--serif); font-size: 13px; font-weight: 500; }
+  .map-tooltip .tt-meta { font-size: 10.5px; color: rgba(239,230,209,0.7); margin-top: 2px; }
+  .map-tooltip .tt-scores { font-family: var(--mono); font-size: 9.5px; letter-spacing: 0.1em; margin-top: 5px; color: rgba(239,230,209,0.85); }
+
+  /* ===== Federation roll-up ===== */
+  .rollup-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 18px;
+    margin-bottom: 26px;
+  }
+  .rollup-card {
+    border: 1px solid var(--rule);
+    background: var(--paper-tint);
+    border-radius: 2px;
+    padding: 18px;
+  }
+  .rollup-num {
+    font-family: var(--mono); font-size: 36px; font-weight: 500;
+    color: var(--cobalt); line-height: 1;
+  }
+  .rollup-num.red    { color: var(--signal-red); }
+  .rollup-num.olive  { color: var(--signal-green); }
+  .rollup-num.amber  { color: var(--signal-yellow); }
+  .rollup-num.green  { color: var(--signal-green); }
+  .rollup-num.yellow { color: var(--signal-yellow); }
+  .rollup-num.terracotta { color: var(--signal-red); }
+  .rollup-lbl {
+    font-family: var(--mono); font-size: 9.5px; font-weight: 500;
+    letter-spacing: 0.12em; text-transform: uppercase;
+    color: var(--mute);
+    margin-top: 6px;
+  }
+  .rollup-detail {
+    font-family: var(--serif); font-size: 12px; color: var(--ink-2);
+    margin-top: 8px; line-height: 1.45;
+  }
+  .quad-table {
+    border: 1px solid var(--rule);
+    background: var(--paper-tint);
+    border-radius: 2px;
+    overflow: hidden;
+    margin-bottom: 26px;
+  }
+  .quad-table-head {
+    background: var(--cream-2);
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--rule);
+    font-family: var(--mono); font-size: 10px; font-weight: 500;
+    letter-spacing: 0.14em; text-transform: uppercase;
+    color: var(--cobalt);
+  }
+  .quad-row {
+    display: grid; grid-template-columns: 250px 60px 1fr;
+    gap: 16px; padding: 12px 16px;
+    border-bottom: 1px solid var(--rule-soft);
+    align-items: center;
+  }
+  .quad-row:last-child { border-bottom: none; }
+  .quad-row .qname {
+    font-family: var(--serif); font-size: 13px; color: var(--ink);
+  }
+  .quad-row .qcount {
+    font-family: var(--mono); font-size: 16px; font-weight: 500;
+    color: var(--cobalt); text-align: center;
+  }
+  .quad-row .qteams {
+    font-family: var(--sans); font-size: 11.5px; color: var(--mute);
+  }
+
+  /* Empty hint */
+  .empty {
+    text-align: center; padding: 40px 20px;
+    color: var(--mute); font-family: var(--serif); font-size: 13px;
+  }
+
+  /* Helpers */
+  .note-line {
+    font-family: var(--serif); font-size: 12px; color: var(--mute); line-height: 1.45;
+    margin-top: 4px; font-style: italic;
+  }
+  .footer-hint {
+    font-family: var(--mono); font-size: 9.5px; color: var(--mute);
+    letter-spacing: 0.1em; padding: 14px 20px 24px;
+  }
+  .legend-line {
+    font-family: var(--mono); font-size: 9.5px; font-weight: 500;
+    letter-spacing: 0.1em; text-transform: uppercase;
+    color: var(--mute);
+    padding: 10px 20px 0;
+    display: flex; gap: 14px; align-items: center; flex-wrap: wrap;
+  }
+  .legend-line .badge-crm, .legend-line .badge-self { font-size: 8.5px; }
+
+  /* Scrollbar */
+  .left-pane::-webkit-scrollbar, .view-host::-webkit-scrollbar { width: 8px; }
+  .left-pane::-webkit-scrollbar-track, .view-host::-webkit-scrollbar-track { background: transparent; }
+  .left-pane::-webkit-scrollbar-thumb, .view-host::-webkit-scrollbar-thumb { background: var(--rule); border-radius: 4px; }
+  .left-pane::-webkit-scrollbar-thumb:hover, .view-host::-webkit-scrollbar-thumb:hover { background: var(--mute); }
+</style>
+
+<script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+</head>
+<body>
+<div id="root"></div>
+
+<script type="text/babel">
+const { useState, useEffect, useRef, useMemo, useCallback } = React;
+
+/* ========= Static config ========= */
+
+const CONSTITUENCY_TYPES = [
+  { value: "congregation", label: "Congregation" },
+  { value: "school",       label: "School / parent body" },
+  { value: "neighborhood", label: "Neighborhood / block" },
+  { value: "workplace",    label: "Workplace" },
+  { value: "campus",       label: "Campus" },
+  { value: "issue",        label: "Issue-based" },
+  { value: "other",        label: "Other" },
+];
+
+/* "CRM" = field that a connected organizing CRM (Groundwork, EveryAction,
+   Salsa, an Airtable base, etc.) could populate directly so the organizer
+   isn't grading themselves on countable facts. "Self" = coach/organizer
+   judgment, can't be derived from records. */
+const PROVENANCE = {
+  CRM: "crm",
+  SELF: "self",
+};
+
+const RIGHT_PEOPLE_CHECKS = [
+  { key: "responsibility", label: "Core leaders consistently take responsibility for the team's work." },
+  { key: "risk",           label: "Core leaders take risks — try things that might fail." },
+  { key: "following",      label: "Each core leader has a base of leaders they're developing and leveraging." },
+  { key: "coown",          label: "Core leaders co-own and co-create the strategy / campaign with their organizer." },
+  { key: "devtrack",       label: "Each core leader has been assessed on the powerful-leader rubric and has a plan to move toward powerful." },
+];
+
+const RIGHT_PEOPLE_LIKERTS = [
+  { key: "agency",    label: "Participants with agency",  help: "Members believe they can make change and feel confident making consequential decisions in the organization." },
+  { key: "belonging", label: "Belonging",                 help: "People feel like they belong; participating in organizing is an added value to their life." },
+];
+
+const REAL_TEAM_LIKERTS = [
+  { key: "coAgendas",      label: "Co-owned agendas",       help: "Meeting agendas are co-owned, co-created and co-led by leaders — not just delivered by the organizer." },
+  { key: "consequential",  label: "Consequential decisions", help: "The team is making consequential decisions about organizational and political strategy." },
+];
+
+const PURPOSE_LIKERTS = [
+  { key: "powerOrientation",   label: "Power orientation",       help: "The team understands how power moves and what role they can play. They're clear they need to be about power." },
+  { key: "missionClarity",     label: "Mission clarity",         help: "The team is clear about what they are organizing for and the steps needed to succeed; clear on the political context." },
+  { key: "strategyPlace",      label: "Place in overarching strategy", help: "The team sees its work as part of the federation's overall strategy; members feel organizational agency and can impact federation decisions." },
+];
+
+/* Quadrant strategy labels — adapted from Cushman/Hackman framing */
+const QUADRANTS = [
+  { num: "1", strategy: "Effective", note: "Distributed leadership + strategic clarity",
+    sxFrac: 0.5, syFrac: -0.5 },
+  { num: "2", strategy: "Coach into strategy", note: "Distributed but mobilizing, not organizing",
+    sxFrac: -0.5, syFrac: -0.5 },
+  { num: "3", strategy: "Develop core leaders", note: "Strategic but organizer-dependent",
+    sxFrac: 0.5, syFrac: 0.5 },
+  { num: "4", strategy: "Restart / rebuild", note: "Neither distributed nor strategic",
+    sxFrac: -0.5, syFrac: 0.5 },
+];
+
+/* ========= Seed data ========= */
+
+const SEED_FED = {
+  fedName: "PICO California — Sample Federation",
+  date: "2026-05-29",
+  scorer: "Lisa, Hannah",
+  crmConnected: true,
+};
+
+const seedTeams = () => ([
+  {
+    id: "t1",
+    name: "St. Augustine's Parent Team",
+    constituencyType: "congregation",
+    constituencyDetail: "St. Augustine's Catholic parish, East Oakland",
+    organizer: "Marisol Vega",
+    monthsActive: 18,
+    /* Right People — CRM-fillable */
+    coreLeaders: 5,
+    members: 12,
+    activeVolunteers: 24,
+    rubricDeveloping: 2,
+    rubricAccelerating: 2,
+    rubricPowerful: 1,
+    /* Right People — self-report */
+    responsibility: true, risk: true, following: true, coown: true, devtrack: true,
+    agency: 4, belonging: 5,
+    /* Real Team — CRM-fillable */
+    boundedMembership: true,
+    meetsMonthly: true, meetingDay: "3rd Tuesday", meetingTime: "6:30pm",
+    stableFullCycle: true,
+    attendancePct: 82,
+    /* Real Team — self-report */
+    coAgendas: 4, consequential: 4,
+    /* Purpose — self-report */
+    powerOrientation: 4, missionClarity: 4, strategyPlace: 4,
+    mediumTermPlan: true, planBrief: "Local school facilities equity campaign — Sep target",
+    powerPlay: true, powerPlayBrief: "April school board pressure action on capital budget",
+    fedRepresented: true,
+    gridX: 0, gridY: 0,
+  },
+  {
+    id: "t2",
+    name: "Roosevelt Elementary Parents",
+    constituencyType: "school",
+    constituencyDetail: "Roosevelt Elementary, Fruitvale",
+    organizer: "James Okafor",
+    monthsActive: 8,
+    coreLeaders: 2,
+    members: 9,
+    activeVolunteers: 18,
+    rubricDeveloping: 4,
+    rubricAccelerating: 1,
+    rubricPowerful: 0,
+    responsibility: true, risk: false, following: false, coown: false, devtrack: true,
+    agency: 3, belonging: 4,
+    boundedMembership: true,
+    meetsMonthly: true, meetingDay: "2nd Thursday", meetingTime: "5:30pm",
+    stableFullCycle: false,
+    attendancePct: 65,
+    coAgendas: 2, consequential: 2,
+    powerOrientation: 2, missionClarity: 3, strategyPlace: 3,
+    mediumTermPlan: false, planBrief: "",
+    powerPlay: false, powerPlayBrief: "",
+    fedRepresented: false,
+    gridX: 0, gridY: 0,
+  },
+  {
+    id: "t3",
+    name: "Westside Tenants United",
+    constituencyType: "neighborhood",
+    constituencyDetail: "Census tracts 4012–4015, West Oakland",
+    organizer: "Devon Mills",
+    monthsActive: 24,
+    coreLeaders: 4,
+    members: 14,
+    activeVolunteers: 31,
+    rubricDeveloping: 2,
+    rubricAccelerating: 2,
+    rubricPowerful: 1,
+    responsibility: true, risk: true, following: true, coown: true, devtrack: true,
+    agency: 5, belonging: 4,
+    boundedMembership: true,
+    meetsMonthly: true, meetingDay: "1st Wednesday", meetingTime: "7:00pm",
+    stableFullCycle: true,
+    attendancePct: 88,
+    coAgendas: 5, consequential: 5,
+    powerOrientation: 5, missionClarity: 4, strategyPlace: 4,
+    mediumTermPlan: true, planBrief: "Just-cause eviction ordinance push, council vote Aug",
+    powerPlay: true, powerPlayBrief: "May rally + commitment cards from 3 council members",
+    fedRepresented: true,
+    gridX: 0, gridY: 0,
+  },
+  {
+    id: "t4",
+    name: "Cal-State East Bay Student Org",
+    constituencyType: "campus",
+    constituencyDetail: "CSUEB campus, Hayward",
+    organizer: "Anita Reyes",
+    monthsActive: 5,
+    coreLeaders: 1,
+    members: 6,
+    activeVolunteers: 11,
+    rubricDeveloping: 5,
+    rubricAccelerating: 0,
+    rubricPowerful: 0,
+    responsibility: false, risk: false, following: false, coown: false, devtrack: false,
+    agency: 2, belonging: 3,
+    boundedMembership: false,
+    meetsMonthly: false, meetingDay: "", meetingTime: "",
+    stableFullCycle: false,
+    attendancePct: 40,
+    coAgendas: 1, consequential: 1,
+    powerOrientation: 2, missionClarity: 1, strategyPlace: 2,
+    mediumTermPlan: false, planBrief: "",
+    powerPlay: false, powerPlayBrief: "",
+    fedRepresented: false,
+    gridX: 0, gridY: 0,
+  },
+  {
+    id: "t5",
+    name: "First AME Faith Team",
+    constituencyType: "congregation",
+    constituencyDetail: "First AME Church, Oakland",
+    organizer: "Marisol Vega",
+    monthsActive: 14,
+    coreLeaders: 3,
+    members: 10,
+    activeVolunteers: 19,
+    rubricDeveloping: 1,
+    rubricAccelerating: 2,
+    rubricPowerful: 0,
+    responsibility: true, risk: false, following: true, coown: false, devtrack: true,
+    agency: 4, belonging: 5,
+    boundedMembership: true,
+    meetsMonthly: true, meetingDay: "4th Sunday", meetingTime: "12:30pm",
+    stableFullCycle: true,
+    attendancePct: 77,
+    coAgendas: 3, consequential: 3,
+    powerOrientation: 3, missionClarity: 3, strategyPlace: 4,
+    mediumTermPlan: true, planBrief: "Voter engagement for Nov local elections",
+    powerPlay: false, powerPlayBrief: "",
+    fedRepresented: true,
+    gridX: 0, gridY: 0,
+  },
+]);
+
+/* ========= Scoring ========= */
+
+/* Each dimension scored 0..1, then x100 for display. */
+
+function scoreRightPeople(t) {
+  /* CRM facts */
+  const coreLeaderScore = Math.min(t.coreLeaders / 5, 1) * 30; // 5+ core leaders = full
+  const totalRubric = t.rubricDeveloping + t.rubricAccelerating + t.rubricPowerful;
+  const rubricScore = totalRubric === 0 ? 0
+    : ((t.rubricAccelerating * 0.6 + t.rubricPowerful * 1.0 + t.rubricDeveloping * 0.3) / totalRubric) * 20;
+  /* Self-report */
+  const checks = RIGHT_PEOPLE_CHECKS.reduce((s, c) => s + (t[c.key] ? 1 : 0), 0);
+  const checksScore = (checks / RIGHT_PEOPLE_CHECKS.length) * 30;
+  const likertScore =
+    (((t.agency || 1) - 1) / 4) * 10 +
+    (((t.belonging || 1) - 1) / 4) * 10;
+  return Math.round(coreLeaderScore + rubricScore + checksScore + likertScore);
+}
+
+function scoreRealTeam(t) {
+  /* CRM facts */
+  const bounded = t.boundedMembership ? 15 : 0;
+  const monthly = t.meetsMonthly ? 15 : 0;
+  const stable  = t.stableFullCycle ? 15 : 0;
+  /* Obama-derived 75% attendance bar */
+  const att = t.attendancePct >= 75 ? 25
+            : t.attendancePct >= 60 ? 15
+            : t.attendancePct >= 40 ? 7
+            : 0;
+  /* Self-report */
+  const coAg = (((t.coAgendas || 1) - 1) / 4) * 15;
+  const cons = (((t.consequential || 1) - 1) / 4) * 15;
+  return Math.round(bounded + monthly + stable + att + coAg + cons);
+}
+
+function scorePurpose(t) {
+  const po = (((t.powerOrientation || 1) - 1) / 4) * 25;
+  const mc = (((t.missionClarity || 1) - 1) / 4) * 20;
+  const sp = (((t.strategyPlace || 1) - 1) / 4) * 20;
+  const plan = t.mediumTermPlan ? 15 : 0;
+  const play = t.powerPlay ? 15 : 0;
+  const fed  = t.fedRepresented ? 5 : 0;
+  return Math.round(po + mc + sp + plan + play + fed);
+}
+
+function scoreTeam(t) {
+  const rp = scoreRightPeople(t);
+  const rt = scoreRealTeam(t);
+  const cp = scorePurpose(t);
+  /* Health index = equal-weighted blend, clamped */
+  const hi = Math.round((rp + rt + cp) / 3);
+  return { rp, rt, cp, hi };
+}
+
+/* Default grid position derived from sub-scores. x = distributed leadership
+   (avg of Right People + co-agendas), y = strategic clarity (Compelling Purpose).
+   Range -1..1 each. */
+function defaultGridPos(t) {
+  const { rp, cp } = scoreTeam(t);
+  const xRaw = (rp + ((t.coAgendas || 1) - 1) / 4 * 100) / 2; // 0..100
+  const yRaw = cp; // 0..100
+  return {
+    x: Math.max(-1, Math.min(1, (xRaw - 50) / 50)),
+    y: Math.max(-1, Math.min(1, (yRaw - 50) / 50)),
+  };
+}
+
+function effectiveGridPos(t) {
+  if (t.gridX !== 0 || t.gridY !== 0) return { x: t.gridX, y: t.gridY };
+  return defaultGridPos(t);
+}
+
+function teamQuadrant(t) {
+  const { x, y } = effectiveGridPos(t);
+  if (x >= 0 && y >= 0) return QUADRANTS[0]; // Effective (upper-right when y is "strategic")
+  if (x < 0  && y >= 0) return QUADRANTS[2]; // Develop core leaders — strategic but not distributed
+  if (x >= 0 && y < 0)  return QUADRANTS[1]; // Coach into strategy — distributed but not strategic
+  return QUADRANTS[3]; // Restart / rebuild
+}
+
+/* Signal colors based on score thresholds */
+function signalLevel(v) {
+  if (v >= 75) return "green";
+  if (v >= 50) return "yellow";
+  return "red";
+}
+function signalColor(v) {
+  if (v >= 75) return "var(--signal-green)";
+  if (v >= 50) return "var(--signal-yellow)";
+  return "var(--signal-red)";
+}
+
+/* ========= Form pieces ========= */
+
+function CrmBadge() { return <span className="badge-crm" title="Could be auto-filled from the org's CRM of record">CRM</span>; }
+function SelfBadge() { return <span className="badge-self" title="Coach / organizer judgment — cannot be derived from records">Self</span>; }
+
+function FieldLabel({ children, prov }) {
+  return (
+    <label>
+      <span className="lbl-text">{children}</span>
+      {prov === PROVENANCE.CRM ? <CrmBadge /> : <SelfBadge />}
+    </label>
+  );
+}
+
+function Likert({ value, onChange }) {
+  return (
+    <div>
+      <div className="likert">
+        {[1,2,3,4,5].map(n => (
+          <button key={n} type="button"
+                  className={value === n ? "selected" : ""}
+                  onClick={() => onChange(n)}>{n}</button>
+        ))}
+      </div>
+      <div className="likert-scale">
+        <span>Not at all</span>
+        <span>Fully</span>
+      </div>
+    </div>
+  );
+}
+
+function YesNo({ value, onChange }) {
+  return (
+    <div className="yn">
+      <button type="button"
+              className={"yes" + (value === true ? " selected" : "")}
+              onClick={() => onChange(true)}>Yes</button>
+      <button type="button"
+              className={"no" + (value === false ? " selected" : "")}
+              onClick={() => onChange(false)}>No</button>
+    </div>
+  );
+}
+
+function CheckList({ items, values, onToggle }) {
+  return (
+    <div className="check-group">
+      {items.map(it => (
+        <label key={it.key} className={"check-row" + (values[it.key] ? " selected" : "")}>
+          <input type="checkbox" checked={!!values[it.key]} onChange={() => onToggle(it.key)} />
+          <span className="check-text">{it.label}</span>
+        </label>
+      ))}
+    </div>
+  );
+}
+
+/* ========= Team form ========= */
+
+function TeamForm({ initial, onCommit, onCancel, crmConnected }) {
+  const blank = {
+    name: "", constituencyType: "congregation", constituencyDetail: "",
+    organizer: "", monthsActive: 0,
+    coreLeaders: 0, members: 0, activeVolunteers: 0,
+    rubricDeveloping: 0, rubricAccelerating: 0, rubricPowerful: 0,
+    responsibility: false, risk: false, following: false, coown: false, devtrack: false,
+    agency: 3, belonging: 3,
+    boundedMembership: false,
+    meetsMonthly: false, meetingDay: "", meetingTime: "",
+    stableFullCycle: false,
+    attendancePct: 0,
+    coAgendas: 3, consequential: 3,
+    powerOrientation: 3, missionClarity: 3, strategyPlace: 3,
+    mediumTermPlan: false, planBrief: "",
+    powerPlay: false, powerPlayBrief: "",
+    fedRepresented: false,
+    gridX: 0, gridY: 0,
+  };
+  const [draft, setDraft] = useState(initial || blank);
+  const set = (k, v) => setDraft(d => ({ ...d, [k]: v }));
+  const setNum = (k, v) => setDraft(d => ({ ...d, [k]: Number(v) || 0 }));
+  const toggle = (k) => setDraft(d => ({ ...d, [k]: !d[k] }));
+
+  const isEditing = !!initial && !!onCancel;
+  useEffect(() => {
+    if (isEditing) onCommit(draft);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [draft]);
+
+  const submit = (e) => {
+    e.preventDefault();
+    if (!draft.name.trim()) return;
+    onCommit(draft);
+    if (!isEditing) setDraft(blank);
+  };
+
+  const crmClass = (val) => crmConnected ? "crm-filled" : "";
+
+  return (
+    <form onSubmit={submit}>
+      {/* Identity */}
+      <div className="form-subsection">
+        <div className="form-subsection-title">Identity</div>
+        <div className="field">
+          <FieldLabel prov={PROVENANCE.CRM}>Team name</FieldLabel>
+          <input className={crmClass(draft.name)} value={draft.name}
+                 onChange={e => set("name", e.target.value)}
+                 placeholder="e.g., St. Augustine's Parent Team" />
+        </div>
+        <div className="field-row">
+          <div className="field">
+            <FieldLabel prov={PROVENANCE.CRM}>Constituency type</FieldLabel>
+            <select className={crmClass(draft.constituencyType)} value={draft.constituencyType}
+                    onChange={e => set("constituencyType", e.target.value)}>
+              {CONSTITUENCY_TYPES.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
+            </select>
+          </div>
+          <div className="field">
+            <FieldLabel prov={PROVENANCE.CRM}>Organizer</FieldLabel>
+            <input className={crmClass(draft.organizer)} value={draft.organizer}
+                   onChange={e => set("organizer", e.target.value)}
+                   placeholder="Staff organizer" />
+          </div>
+        </div>
+        <div className="field-row">
+          <div className="field">
+            <FieldLabel prov={PROVENANCE.CRM}>Constituency detail</FieldLabel>
+            <input className={crmClass(draft.constituencyDetail)} value={draft.constituencyDetail}
+                   onChange={e => set("constituencyDetail", e.target.value)}
+                   placeholder="Which congregation / school / block?" />
+          </div>
+          <div className="field">
+            <FieldLabel prov={PROVENANCE.CRM}>Months active</FieldLabel>
+            <input type="number" min="0" className={crmClass(draft.monthsActive)}
+                   value={draft.monthsActive}
+                   onChange={e => setNum("monthsActive", e.target.value)} />
+          </div>
+        </div>
+      </div>
+
+      {/* Right People */}
+      <div className="form-subsection">
+        <div className="form-subsection-title">Right people</div>
+        <div className="form-subsection-sub">A team with the range of perspectives and the skills — including teamwork, facilitation, and management — to do the work. (Wageman &amp; Hackman)</div>
+
+        <div className="field-row-3">
+          <div className="field">
+            <FieldLabel prov={PROVENANCE.CRM}>Core leaders</FieldLabel>
+            <input type="number" min="0" className={crmClass(draft.coreLeaders)}
+                   value={draft.coreLeaders}
+                   onChange={e => setNum("coreLeaders", e.target.value)} />
+          </div>
+          <div className="field">
+            <FieldLabel prov={PROVENANCE.CRM}>Members</FieldLabel>
+            <input type="number" min="0" className={crmClass(draft.members)}
+                   value={draft.members}
+                   onChange={e => setNum("members", e.target.value)} />
+          </div>
+          <div className="field">
+            <FieldLabel prov={PROVENANCE.CRM}>Active vols.</FieldLabel>
+            <input type="number" min="0" className={crmClass(draft.activeVolunteers)}
+                   value={draft.activeVolunteers}
+                   onChange={e => setNum("activeVolunteers", e.target.value)} />
+          </div>
+        </div>
+
+        <div className="field">
+          <FieldLabel prov={PROVENANCE.CRM}>Leader-rubric placements (counts)</FieldLabel>
+          <div className="field-row-3">
+            <div className="field" style={{margin: 0}}>
+              <label style={{fontSize: 8.5, color: "var(--mute)"}}><span className="lbl-text">Developing</span></label>
+              <input type="number" min="0" className={crmClass(draft.rubricDeveloping)}
+                     value={draft.rubricDeveloping}
+                     onChange={e => setNum("rubricDeveloping", e.target.value)} />
+            </div>
+            <div className="field" style={{margin: 0}}>
+              <label style={{fontSize: 8.5, color: "var(--mute)"}}><span className="lbl-text">Accelerating</span></label>
+              <input type="number" min="0" className={crmClass(draft.rubricAccelerating)}
+                     value={draft.rubricAccelerating}
+                     onChange={e => setNum("rubricAccelerating", e.target.value)} />
+            </div>
+            <div className="field" style={{margin: 0}}>
+              <label style={{fontSize: 8.5, color: "var(--mute)"}}><span className="lbl-text">Powerful</span></label>
+              <input type="number" min="0" className={crmClass(draft.rubricPowerful)}
+                     value={draft.rubricPowerful}
+                     onChange={e => setNum("rubricPowerful", e.target.value)} />
+            </div>
+          </div>
+        </div>
+
+        <div className="field">
+          <FieldLabel prov={PROVENANCE.SELF}>Core-leader practice — check what's true</FieldLabel>
+          <CheckList items={RIGHT_PEOPLE_CHECKS} values={draft} onToggle={toggle} />
+        </div>
+
+        {RIGHT_PEOPLE_LIKERTS.map(l => (
+          <div className="field" key={l.key}>
+            <FieldLabel prov={PROVENANCE.SELF}>{l.label}</FieldLabel>
+            <p className="note-line" style={{marginTop: 0, marginBottom: 6}}>{l.help}</p>
+            <Likert value={draft[l.key]} onChange={v => set(l.key, v)} />
+          </div>
+        ))}
+      </div>
+
+      {/* Real Team */}
+      <div className="form-subsection">
+        <div className="form-subsection-title">Real team</div>
+        <div className="form-subsection-sub">Bounded membership, working together to accomplish their work, stable long enough to accomplish something meaningful.</div>
+
+        <div className="field">
+          <FieldLabel prov={PROVENANCE.CRM}>Bounded membership — people know who's on the team</FieldLabel>
+          <YesNo value={draft.boundedMembership} onChange={v => set("boundedMembership", v)} />
+        </div>
+
+        <div className="field">
+          <FieldLabel prov={PROVENANCE.CRM}>Meets at least monthly</FieldLabel>
+          <YesNo value={draft.meetsMonthly} onChange={v => set("meetsMonthly", v)} />
+        </div>
+
+        {draft.meetsMonthly && (
+          <div className="field-row">
+            <div className="field">
+              <FieldLabel prov={PROVENANCE.CRM}>Regular day</FieldLabel>
+              <input className={crmClass(draft.meetingDay)} value={draft.meetingDay}
+                     onChange={e => set("meetingDay", e.target.value)}
+                     placeholder="e.g., 3rd Tuesday" />
+            </div>
+            <div className="field">
+              <FieldLabel prov={PROVENANCE.CRM}>Time</FieldLabel>
+              <input className={crmClass(draft.meetingTime)} value={draft.meetingTime}
+                     onChange={e => set("meetingTime", e.target.value)}
+                     placeholder="e.g., 6:30pm" />
+            </div>
+          </div>
+        )}
+
+        <div className="field">
+          <FieldLabel prov={PROVENANCE.CRM}>Stable through ≥ 1 full organizing cycle</FieldLabel>
+          <YesNo value={draft.stableFullCycle} onChange={v => set("stableFullCycle", v)} />
+        </div>
+
+        <div className="field">
+          <FieldLabel prov={PROVENANCE.CRM}>Attendance consistency (% of last 6 meetings)</FieldLabel>
+          <input type="number" min="0" max="100" className={crmClass(draft.attendancePct)}
+                 value={draft.attendancePct}
+                 onChange={e => setNum("attendancePct", e.target.value)} />
+          <p className="note-line">PICO bar: same group attends 75% of LOC meetings (4 of 6).</p>
+        </div>
+
+        {REAL_TEAM_LIKERTS.map(l => (
+          <div className="field" key={l.key}>
+            <FieldLabel prov={PROVENANCE.SELF}>{l.label}</FieldLabel>
+            <p className="note-line" style={{marginTop: 0, marginBottom: 6}}>{l.help}</p>
+            <Likert value={draft[l.key]} onChange={v => set(l.key, v)} />
+          </div>
+        ))}
+      </div>
+
+      {/* Compelling Purpose */}
+      <div className="form-subsection">
+        <div className="form-subsection-title">Compelling purpose</div>
+        <div className="form-subsection-sub">A purpose that engages commitment and orients in a shared direction — challenging, clear, consequential.</div>
+
+        {PURPOSE_LIKERTS.map(l => (
+          <div className="field" key={l.key}>
+            <FieldLabel prov={PROVENANCE.SELF}>{l.label}</FieldLabel>
+            <p className="note-line" style={{marginTop: 0, marginBottom: 6}}>{l.help}</p>
+            <Likert value={draft[l.key]} onChange={v => set(l.key, v)} />
+          </div>
+        ))}
+
+        <div className="field">
+          <FieldLabel prov={PROVENANCE.SELF}>Has a 3–6 month organizing plan with concrete goals &amp; dates</FieldLabel>
+          <YesNo value={draft.mediumTermPlan} onChange={v => set("mediumTermPlan", v)} />
+          {draft.mediumTermPlan && (
+            <textarea style={{marginTop: 8}} value={draft.planBrief}
+                      onChange={e => set("planBrief", e.target.value)}
+                      placeholder="One-line summary of the plan" />
+          )}
+        </div>
+
+        <div className="field">
+          <FieldLabel prov={PROVENANCE.SELF}>Has a power play to get something they want</FieldLabel>
+          <YesNo value={draft.powerPlay} onChange={v => set("powerPlay", v)} />
+          {draft.powerPlay && (
+            <textarea style={{marginTop: 8}} value={draft.powerPlayBrief}
+                      onChange={e => set("powerPlayBrief", e.target.value)}
+                      placeholder="What's the play?" />
+          )}
+        </div>
+
+        <div className="field">
+          <FieldLabel prov={PROVENANCE.CRM}>Represented at federation strategy meetings</FieldLabel>
+          <YesNo value={draft.fedRepresented} onChange={v => set("fedRepresented", v)} />
+        </div>
+      </div>
+
+      {!isEditing ? (
+        <div className="btn-row">
+          <button type="submit" className="btn btn-primary">Add team</button>
+        </div>
+      ) : (
+        <div className="btn-row">
+          <button type="button" className="btn btn-ghost" onClick={onCancel}>Done editing</button>
+        </div>
+      )}
+    </form>
+  );
+}
+
+/* ========= Team card (list item) ========= */
+
+function TeamCard({ team, onUpdate, onDelete, crmConnected }) {
+  const [editing, setEditing] = useState(false);
+  const { rp, rt, cp, hi } = scoreTeam(team);
+  const q = teamQuadrant(team);
+  const chipColor = signalColor(hi);
+  return (
+    <div className={"team-card" + (editing ? " editing" : "")}>
+      <div className="team-card-head">
+        <span className="team-color-chip" style={{ background: chipColor }}></span>
+        <div className="team-summary">
+          <div className="team-name">{team.name || <span style={{color:"var(--mute)", fontStyle:"italic"}}>Untitled team</span>}</div>
+          <div className="team-meta">
+            {[team.constituencyDetail, team.organizer && "Organizer: " + team.organizer].filter(Boolean).join(" · ") || <span style={{fontStyle:"italic"}}>no detail</span>}
+          </div>
+          <div className="team-scoreline">
+            <span><span className="lbl">Health</span> {hi}</span>
+            <span><span className="lbl">RP</span> {rp}</span>
+            <span><span className="lbl">RT</span> {rt}</span>
+            <span><span className="lbl">CP</span> {cp}</span>
+            <span><span className="lbl">→</span> {q.strategy}</span>
+          </div>
+        </div>
+        <div className="team-actions">
+          <button className="icon-btn" onClick={() => setEditing(e => !e)}>{editing ? "Close" : "Edit"}</button>
+          <button className="icon-btn delete" onClick={() => onDelete(team.id)}>Del</button>
+        </div>
+      </div>
+      {editing && (
+        <div className="team-edit-body">
+          <TeamForm
+            initial={team}
+            onCommit={(d) => onUpdate(team.id, d)}
+            onCancel={() => setEditing(false)}
+            crmConnected={crmConnected}
+          />
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ========= Scorecard view ========= */
+
+function RadarChart({ rp, rt, cp, size = 180 }) {
+  const cx = size / 2, cy = size / 2 + 4;
+  const r = (size / 2) - 36;
+  const vals = [rp/100, rt/100, cp/100];
+  const angles = [-Math.PI/2, -Math.PI/2 + (2*Math.PI/3), -Math.PI/2 + (4*Math.PI/3)];
+  const pts = vals.map((v, i) => [
+    cx + Math.cos(angles[i]) * r * v,
+    cy + Math.sin(angles[i]) * r * v,
+  ]);
+  const axisPts = angles.map(a => [cx + Math.cos(a) * r, cy + Math.sin(a) * r]);
+  const labelPts = angles.map(a => [cx + Math.cos(a) * (r + 18), cy + Math.sin(a) * (r + 18)]);
+  /* Single-word labels to prevent clipping */
+  const labels = [["Right", "People"], ["Real", "Team"], ["Purpose"]];
+  const overallHi = Math.round((rp + rt + cp) / 3);
+  const polyFill = signalColor(overallHi);
+  return (
+    <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
+      {/* Rings */}
+      {[0.25, 0.5, 0.75, 1].map((rf, i) => (
+        <circle key={i} cx={cx} cy={cy} r={r * rf}
+                fill="none" stroke="var(--rule)" strokeWidth="0.6" opacity={i === 3 ? 0.9 : 0.4} />
+      ))}
+      {/* Axes */}
+      {axisPts.map(([x, y], i) => (
+        <line key={i} x1={cx} y1={cy} x2={x} y2={y} stroke="var(--rule)" strokeWidth="0.6" />
+      ))}
+      {/* Filled polygon */}
+      <polygon points={pts.map(p => p.join(",")).join(" ")}
+               fill={polyFill} fillOpacity="0.22"
+               stroke={polyFill} strokeWidth="1.5" />
+      {pts.map((p, i) => (
+        <circle key={i} cx={p[0]} cy={p[1]} r="3.2" fill={polyFill} />
+      ))}
+      {/* Labels */}
+      {labelPts.map(([x, y], i) => (
+        <text key={i} x={x} y={y} textAnchor="middle" dominantBaseline="middle"
+              style={{fontFamily: "var(--mono)", fontSize: 9, letterSpacing: "0.1em",
+                      textTransform: "uppercase", fill: "var(--ink-2)", fontWeight: 500}}>
+          {labels[i].map((w, j) => (
+            <tspan key={j} x={x} dy={j === 0 ? -((labels[i].length - 1) * 5) : 11}>{w}</tspan>
+          ))}
+        </text>
+      ))}
+    </svg>
+  );
+}
+
+/* GitHub-style contribution grid: 3 rows × 7 cells.
+   Each row = a dimension (RP / RT / CP). Filled cells = subscore/100*7.
+   Color = signal level. */
+function ContribGrid({ rp, rt, cp }) {
+  const rows = [
+    { lbl: "RP", val: rp },
+    { lbl: "RT", val: rt },
+    { lbl: "CP", val: cp },
+  ];
+  return (
+    <div className="contrib-rows">
+      {rows.map((row, i) => {
+        const filled = Math.round((row.val / 100) * 7);
+        const level = signalLevel(row.val);
+        return (
+          <div className="contrib-row" key={i}>
+            <span className="contrib-row-num">{row.lbl}</span>
+            {[0,1,2,3,4,5,6].map(j => (
+              <div key={j}
+                   className={"contrib-cell" + (j < filled ? " " + level : " dim")} />
+            ))}
+            <span className="contrib-row-num">{row.val}</span>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+function ScoreBar({ label, value }) {
+  const lvl = signalLevel(value);
+  return (
+    <div className="score-bar-row">
+      <span className="score-bar-lbl">{label}</span>
+      <div className="score-bar-track">
+        <div className={"score-bar-fill " + lvl} style={{width: value + "%"}}></div>
+      </div>
+      <span className={"score-bar-num " + lvl}>{value}</span>
+    </div>
+  );
+}
+
+function tagsForTeam(team) {
+  const out = [];
+  if (team.coreLeaders < 3) out.push({ kind: "flag", text: "< 3 core leaders" });
+  if (!team.meetsMonthly) out.push({ kind: "flag", text: "No monthly cadence" });
+  if (team.attendancePct < 75 && team.meetsMonthly) out.push({ kind: "flag", text: "Attendance < 75%" });
+  if (!team.stableFullCycle) out.push({ kind: "flag", text: "Not stable yet" });
+  if (!team.mediumTermPlan) out.push({ kind: "flag", text: "No 3–6 mo plan" });
+  if (!team.powerPlay) out.push({ kind: "flag", text: "No power play" });
+  if (team.fedRepresented) out.push({ kind: "ok", text: "Fed-represented" });
+  if (team.rubricPowerful >= 1) out.push({ kind: "ok", text: team.rubricPowerful + " powerful leaders" });
+  return out;
+}
+
+function ScorecardView({ teams }) {
+  const [sortKey, setSortKey] = useState("hi");
+  const sorted = [...teams].sort((a, b) => {
+    const sa = scoreTeam(a), sb = scoreTeam(b);
+    if (sortKey === "hi") return sb.hi - sa.hi;
+    if (sortKey === "rp") return sb.rp - sa.rp;
+    if (sortKey === "rt") return sb.rt - sa.rt;
+    if (sortKey === "cp") return sb.cp - sa.cp;
+    if (sortKey === "name") return a.name.localeCompare(b.name);
+    return 0;
+  });
+  return (
+    <div>
+      <div className="sortbar">
+        <span>Sort by</span>
+        <select value={sortKey} onChange={e => setSortKey(e.target.value)}>
+          <option value="hi">Team Health Index</option>
+          <option value="rp">Right People</option>
+          <option value="rt">Real Team</option>
+          <option value="cp">Compelling Purpose</option>
+          <option value="name">Team name</option>
+        </select>
+        <span style={{marginLeft: "auto"}}>{teams.length} teams</span>
+      </div>
+      {teams.length === 0 ? (
+        <div className="empty">No teams yet. Add one in the left pane.</div>
+      ) : (
+        <div className="scorecard-grid">
+          {sorted.map(t => {
+            const s = scoreTeam(t);
+            const tags = tagsForTeam(t);
+            return (
+              <div className="score-card" key={t.id}>
+                <div className="score-card-head">
+                  <div style={{flex: 1, minWidth: 0}}>
+                    <div className="score-card-title">{t.name}</div>
+                    <div className="score-card-meta">{t.constituencyDetail || "—"}</div>
+                    <div style={{marginTop: 8, display: "flex", alignItems: "center", gap: 10}}>
+                      <span className={"health-index " + signalLevel(s.hi)}>{s.hi}</span>
+                      <span className="health-index-lbl">Health Idx</span>
+                    </div>
+                  </div>
+                  <ContribGrid rp={s.rp} rt={s.rt} cp={s.cp} />
+                </div>
+                <div className="score-radar">
+                  <RadarChart rp={s.rp} rt={s.rt} cp={s.cp} />
+                </div>
+                <div className="score-bars">
+                  <ScoreBar label="Right People" value={s.rp} />
+                  <ScoreBar label="Real Team" value={s.rt} />
+                  <ScoreBar label="Compelling Purpose" value={s.cp} />
+                </div>
+                {tags.length > 0 && (
+                  <div className="score-tags">
+                    {tags.map((t, i) => <span key={i} className={"score-tag " + (t.kind === "flag" ? "flag" : "ok")}>{t.text}</span>)}
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ========= 2x2 Effectiveness Grid ========= */
+
+function EffectivenessGrid({ teams, onUpdateTeam }) {
+  const hostRef = useRef(null);
+  const [size, setSize] = useState({ w: 700, h: 600 });
+  const [dragId, setDragId] = useState(null);
+  const [tip, setTip] = useState(null);
+
+  useEffect(() => {
+    if (!hostRef.current) return;
+    const ro = new ResizeObserver(([entry]) => {
+      const r = entry.contentRect;
+      setSize({ w: Math.max(420, r.width - 60), h: Math.max(420, r.height - 60) });
+    });
+    ro.observe(hostRef.current);
+    return () => ro.disconnect();
+  }, []);
+
+  const side = Math.min(size.w, size.h);
+  const cx = side / 2, cy = side / 2, half = side / 2 - 80;
+  const xFor = (v) => cx + v * half;
+  const yFor = (v) => cy - v * half;
+
+  const onDotDown = (e, t) => {
+    e.preventDefault();
+    setDragId(t.id);
+  };
+  const onMove = useCallback((e) => {
+    if (!dragId || !hostRef.current) return;
+    const svgEl = hostRef.current.querySelector("svg");
+    if (!svgEl) return;
+    const rect = svgEl.getBoundingClientRect();
+    const sx = e.clientX - rect.left;
+    const sy = e.clientY - rect.top;
+    /* Convert screen -> svg coords assuming uniform scaling */
+    const scale = svgEl.viewBox.baseVal.width / rect.width;
+    const px = sx * scale;
+    const py = sy * scale;
+    const nx = Math.max(-1, Math.min(1, (px - cx) / half));
+    const ny = Math.max(-1, Math.min(1, (cy - py) / half));
+    onUpdateTeam(dragId, { gridX: Number(nx.toFixed(2)), gridY: Number(ny.toFixed(2)) });
+  }, [dragId, cx, cy, half, onUpdateTeam]);
+  const onUp = useCallback(() => setDragId(null), []);
+
+  useEffect(() => {
+    window.addEventListener("mousemove", onMove);
+    window.addEventListener("mouseup", onUp);
+    return () => {
+      window.removeEventListener("mousemove", onMove);
+      window.removeEventListener("mouseup", onUp);
+    };
+  }, [onMove, onUp]);
+
+  const quadCoords = QUADRANTS.map(q => ({
+    ...q,
+    sx: xFor(q.sxFrac),
+    sy: yFor(q.syFrac),
+  }));
+
+  return (
+    <div className="grid-stage" ref={hostRef}>
+      <svg className="grid-svg" viewBox={`0 0 ${side} ${side}`} width={side} height={side}>
+        {/* Axes */}
+        <line x1={cx - half} y1={cy} x2={cx + half} y2={cy} stroke="var(--rule)" strokeWidth="1" />
+        <line x1={cx} y1={cy - half} x2={cx} y2={cy + half} stroke="var(--rule)" strokeWidth="1" />
+
+        {/* Axis labels — top/bottom horizontal, sides rotated 90° to fit */}
+        <text className="grid-axis-label" x={cx} y={cy - half - 22} textAnchor="middle">Strategic (organizing)</text>
+        <text className="grid-axis-label" x={cx} y={cy + half + 32} textAnchor="middle">Reactive (mobilizing)</text>
+        <text className="grid-axis-label" x={cx - half - 22} y={cy} textAnchor="middle" dominantBaseline="middle"
+              transform={`rotate(-90, ${cx - half - 22}, ${cy})`}>Organizer-led</text>
+        <text className="grid-axis-label" x={cx + half + 22} y={cy} textAnchor="middle" dominantBaseline="middle"
+              transform={`rotate(90, ${cx + half + 22}, ${cy})`}>Leader-distributed</text>
+
+        {/* Quadrant strategy labels */}
+        {quadCoords.map((q, i) => (
+          <g key={i}>
+            <text className="grid-quad-label" x={q.sx} y={q.sy} textAnchor="middle">{q.num}</text>
+            <text className="grid-quad-strategy" x={q.sx} y={q.sy + 18} textAnchor="middle">{q.strategy}</text>
+          </g>
+        ))}
+
+        {/* Team dots */}
+        {teams.map(t => {
+          const { x, y } = effectiveGridPos(t);
+          const ax = xFor(x), ay = yFor(y);
+          const s = scoreTeam(t);
+          const color = signalColor(s.hi);
+          /* Bubble size = members (capped so very large teams don't dwarf the chart) */
+          const r = 7 + Math.min(t.members || 0, 30) * 0.7;
+          return (
+            <g key={t.id}
+               className={"grid-dot" + (dragId === t.id ? " dragging" : "")}
+               transform={`translate(${ax}, ${ay})`}
+               onMouseDown={(e) => onDotDown(e, t)}
+               onMouseEnter={(e) => {
+                 const rect = hostRef.current.getBoundingClientRect();
+                 setTip({ x: e.clientX - rect.left, y: e.clientY - rect.top, team: t, scores: s });
+               }}
+               onMouseMove={(e) => {
+                 if (!tip) return;
+                 const rect = hostRef.current.getBoundingClientRect();
+                 setTip(t2 => t2 ? { ...t2, x: e.clientX - rect.left, y: e.clientY - rect.top } : t2);
+               }}
+               onMouseLeave={() => setTip(null)}>
+              <circle r={r} fill={color} stroke="rgba(23,21,20,0.4)" strokeWidth="1" opacity="0.92" />
+              <text x="0" y={r + 13} textAnchor="middle"
+                    className="node-label" style={{fontSize: 10}}>
+                {t.name.length > 26 ? t.name.slice(0, 24) + "…" : t.name}
+              </text>
+            </g>
+          );
+        })}
+      </svg>
+
+      <div className="legend">
+        <h3>Quadrants</h3>
+        {QUADRANTS.map((q, i) => (
+          <div key={i} className="item">
+            <span style={{fontFamily:"var(--mono)",fontSize:10,color:"var(--cobalt)",width:14}}>{q.num}</span>
+            <span><strong style={{fontFamily:"var(--serif)",fontWeight:500}}>{q.strategy}</strong> — {q.note}</span>
+          </div>
+        ))}
+        <h3>Dot</h3>
+        <div className="item" style={{fontSize: 11, color: "var(--mute)"}}>
+          Color = Health Index. Size = members. Drag to reposition.
+        </div>
+      </div>
+
+      {tip && tip.team && (
+        <div className="map-tooltip" style={{
+          left: Math.min(tip.x + 14, size.w - 290),
+          top: Math.min(tip.y + 14, size.h - 100)
+        }}>
+          <div className="tt-name">{tip.team.name}</div>
+          <div className="tt-meta">{tip.team.constituencyDetail || "—"}</div>
+          <div className="tt-scores">
+            Health {tip.scores.hi} · RP {tip.scores.rp} · RT {tip.scores.rt} · CP {tip.scores.cp}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ========= Federation rollup view ========= */
+
+function RollupView({ teams }) {
+  if (teams.length === 0) return <div className="empty">No teams yet — federation roll-up will populate as teams are added.</div>;
+  const scored = teams.map(t => ({ t, s: scoreTeam(t), q: teamQuadrant(t) }));
+  const effective = scored.filter(x => x.s.hi >= 75);
+  const developing = scored.filter(x => x.s.hi >= 50 && x.s.hi < 75);
+  const stalled = scored.filter(x => x.s.hi < 50);
+  const byQuad = QUADRANTS.map(q => ({
+    q,
+    teams: scored.filter(x => x.q.num === q.num).map(x => x.t),
+  }));
+
+  const avg = (arr, fn) => arr.length === 0 ? 0 : Math.round(arr.reduce((s, x) => s + fn(x), 0) / arr.length);
+  const avgRP = avg(scored, x => x.s.rp);
+  const avgRT = avg(scored, x => x.s.rt);
+  const avgCP = avg(scored, x => x.s.cp);
+
+  const flags = {
+    noPlan: scored.filter(x => !x.t.mediumTermPlan).length,
+    noPlay: scored.filter(x => !x.t.powerPlay).length,
+    underAtt: scored.filter(x => x.t.meetsMonthly && x.t.attendancePct < 75).length,
+    underCore: scored.filter(x => x.t.coreLeaders < 3).length,
+  };
+
+  return (
+    <div>
+      <div className="rollup-grid">
+        <div className="rollup-card">
+          <div className="rollup-num olive">{effective.length}</div>
+          <div className="rollup-lbl">Effective teams (Health ≥ 75)</div>
+          <div className="rollup-detail">Distributed, real teams with compelling purpose.</div>
+        </div>
+        <div className="rollup-card">
+          <div className="rollup-num amber">{developing.length}</div>
+          <div className="rollup-lbl">Developing teams (Health 50–74)</div>
+          <div className="rollup-detail">On track but missing one or more conditions.</div>
+        </div>
+        <div className="rollup-card">
+          <div className="rollup-num terracotta">{stalled.length}</div>
+          <div className="rollup-lbl">Stalled / pre-team (Health &lt; 50)</div>
+          <div className="rollup-detail">Restart, rebuild, or sunset.</div>
+        </div>
+        <div className="rollup-card">
+          <div className="rollup-num">{teams.length}</div>
+          <div className="rollup-lbl">Teams scored</div>
+          <div className="rollup-detail">Federation snapshot — scored on this session.</div>
+        </div>
+      </div>
+
+      <div className="quad-table">
+        <div className="quad-table-head">Distribution across effectiveness quadrants</div>
+        {byQuad.map(({ q, teams }) => (
+          <div className="quad-row" key={q.num}>
+            <div className="qname">
+              <strong style={{fontFamily:"var(--serif)", fontWeight:500}}>{q.num}. {q.strategy}</strong>
+              <div style={{fontSize:11.5, color:"var(--mute)", marginTop: 2}}>{q.note}</div>
+            </div>
+            <div className="qcount">{teams.length}</div>
+            <div className="qteams">{teams.map(t => t.name).join(" · ") || <span style={{fontStyle:"italic"}}>None in this quadrant</span>}</div>
+          </div>
+        ))}
+      </div>
+
+      <div className="rollup-grid">
+        <div className="rollup-card">
+          <div className="rollup-num">{avgRP}</div>
+          <div className="rollup-lbl">Avg Right People</div>
+        </div>
+        <div className="rollup-card">
+          <div className="rollup-num">{avgRT}</div>
+          <div className="rollup-lbl">Avg Real Team</div>
+        </div>
+        <div className="rollup-card">
+          <div className="rollup-num">{avgCP}</div>
+          <div className="rollup-lbl">Avg Compelling Purpose</div>
+        </div>
+      </div>
+
+      <div className="quad-table">
+        <div className="quad-table-head">Federation-wide flags</div>
+        <div className="quad-row" style={{gridTemplateColumns: "1fr 60px"}}>
+          <div className="qname">Teams without a 3–6 month organizing plan</div>
+          <div className="qcount">{flags.noPlan}</div>
+        </div>
+        <div className="quad-row" style={{gridTemplateColumns: "1fr 60px"}}>
+          <div className="qname">Teams without a power play</div>
+          <div className="qcount">{flags.noPlay}</div>
+        </div>
+        <div className="quad-row" style={{gridTemplateColumns: "1fr 60px"}}>
+          <div className="qname">Teams meeting monthly but with attendance &lt; 75%</div>
+          <div className="qcount">{flags.underAtt}</div>
+        </div>
+        <div className="quad-row" style={{gridTemplateColumns: "1fr 60px"}}>
+          <div className="qname">Teams with fewer than 3 core leaders</div>
+          <div className="qcount">{flags.underCore}</div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ========= App ========= */
+
+function App() {
+  const [fed, setFed] = useState(SEED_FED);
+  const [teams, setTeams] = useState(seedTeams());
+  /* Only one section open at a time, so the list is always reachable */
+  const [openSection, setOpenSection] = useState("list"); // "fed" | "add" | "list"
+  const [view, setView] = useState("scorecard");
+  const toggleSection = (key) => setOpenSection(s => s === key ? "list" : key);
+
+  const addTeam = useCallback((draft) => {
+    setTeams(prev => [...prev, { ...draft, id: "t" + Date.now() + Math.floor(Math.random()*1000) }]);
+  }, []);
+  const updateTeam = useCallback((id, draft) => {
+    setTeams(prev => prev.map(t => t.id === id ? { ...t, ...draft, id } : t));
+  }, []);
+  const deleteTeam = useCallback((id) => {
+    setTeams(prev => prev.filter(t => t.id !== id));
+  }, []);
+
+  const reset = () => {
+    setFed(SEED_FED);
+    setTeams(seedTeams());
+  };
+
+  const exportJSON = () => {
+    const payload = { fed, teams, exportedAt: new Date().toISOString() };
+    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `team-effectiveness-${(fed.fedName || "untitled").toLowerCase().replace(/[^a-z0-9]+/g,"-")}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
+  return (
+    <div className="app">
+      <header className="topbar">
+        <div className="title-block">
+          <span className="wordmark">Team Effectiveness Instrument</span>
+        </div>
+        <div style={{display:"flex", alignItems:"center", gap:14}}>
+          <label style={{display:"flex", alignItems:"center", gap:6, fontFamily:"var(--mono)", fontSize:10, letterSpacing:"0.12em", textTransform:"uppercase", color:"var(--mute)", cursor:"pointer"}}>
+            <input type="checkbox" checked={fed.crmConnected}
+                   onChange={e => setFed({...fed, crmConnected: e.target.checked})}
+                   style={{accentColor: "var(--teal)"}} />
+            CRM connected
+          </label>
+          <span className="badge">Demo · data not saved</span>
+          <div className="top-actions">
+            <button className="btn btn-ghost" onClick={exportJSON}>Export JSON</button>
+            <button className="btn btn-ghost" onClick={reset}>Reset</button>
+          </div>
+        </div>
+      </header>
+
+      <div className="legend-line">
+        <span><CrmBadge /> = could be auto-filled from the org's CRM of record (Groundwork, EveryAction, Salsa, Airtable, …)</span>
+        <span><SelfBadge /> = coach / organizer judgment</span>
+      </div>
+
+      <div className="pane-wrap">
+        <aside className="left-pane">
+
+          <div style={{padding:"20px 20px 4px"}}>
+            <h1 style={{fontFamily:"var(--serif)", fontSize:22, fontWeight:400, margin:"0 0 4px"}}>Team Effectiveness</h1>
+            <p style={{fontFamily:"var(--serif)", fontSize:13, color:"var(--ink-2)", margin:"0 0 8px", lineHeight:1.5}}>
+              A snapshot of how many <em>effective</em> organizing teams the federation currently has — scored on Wageman &amp; Hackman's three essential conditions, with PICO's organizing-context additions.
+            </p>
+          </div>
+
+          <section className="section">
+            <div className="section-header" onClick={() => toggleSection("fed")}>
+              <h2>Federation &amp; respondents</h2>
+              <span className="caret">{openSection === "fed" ? "−" : "+"}</span>
+            </div>
+            {openSection === "fed" && (
+              <div className="section-body">
+                <div style={{marginBottom: 12}}>
+                  <button type="button" className="btn btn-ghost" onClick={() => setOpenSection("list")}>← Back to teams</button>
+                </div>
+                <div className="field">
+                  <FieldLabel prov={PROVENANCE.SELF}>Federation / network name</FieldLabel>
+                  <input value={fed.fedName} onChange={e => setFed({...fed, fedName: e.target.value})} />
+                </div>
+                <div className="field-row">
+                  <div className="field">
+                    <FieldLabel prov={PROVENANCE.SELF}>Date</FieldLabel>
+                    <input type="date" value={fed.date} onChange={e => setFed({...fed, date: e.target.value})} />
+                  </div>
+                  <div className="field">
+                    <FieldLabel prov={PROVENANCE.SELF}>Scorer(s)</FieldLabel>
+                    <input value={fed.scorer} onChange={e => setFed({...fed, scorer: e.target.value})} placeholder="Whose judgment is this?" />
+                  </div>
+                </div>
+                <p className="note-line">When CRM is connected, the teal-shaded fields draw directly from the org's records: counts, meeting cadence, attendance, rubric placements. The organizer doesn't grade themselves on countable facts — only on practice and purpose.</p>
+              </div>
+            )}
+          </section>
+
+          <section className="section">
+            <div className="section-header" onClick={() => toggleSection("add")}>
+              <h2>Add a team</h2>
+              <span className="caret">{openSection === "add" ? "−" : "+"}</span>
+            </div>
+            {openSection === "add" && (
+              <div className="section-body">
+                <div style={{marginBottom: 12, display: "flex", gap: 8}}>
+                  <button type="button" className="btn btn-ghost" onClick={() => setOpenSection("list")}>← Back to teams</button>
+                </div>
+                <TeamForm onCommit={(d) => { addTeam(d); setOpenSection("list"); }}
+                          onCancel={() => setOpenSection("list")}
+                          crmConnected={fed.crmConnected} />
+              </div>
+            )}
+          </section>
+
+          <section className="section">
+            <div className="section-header" onClick={() => toggleSection("list")}>
+              <h2>Teams entered ({teams.length})</h2>
+              <span className="caret">{openSection === "list" ? "−" : "+"}</span>
+            </div>
+            {openSection === "list" && (
+              <div className="section-body">
+                <div style={{marginBottom: 12, display: "flex", gap: 8}}>
+                  <button type="button" className="btn btn-primary" onClick={() => setOpenSection("add")}>+ Add a team</button>
+                </div>
+                {teams.length === 0 ? (
+                  <div className="empty">No teams yet. Add one above to populate the views.</div>
+                ) : (
+                  <div className="team-list">
+                    {teams.map(t => (
+                      <TeamCard key={t.id} team={t} onUpdate={updateTeam} onDelete={deleteTeam} crmConnected={fed.crmConnected} />
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+          </section>
+
+          <div className="footer-hint">
+            Prototype for PICO California DPI — not a production instrument (yet).
+          </div>
+        </aside>
+
+        <main className="right-pane">
+          <div className="tabs">
+            <button className={"tab" + (view === "scorecard" ? " active" : "")} onClick={() => setView("scorecard")}>Scorecard</button>
+            <button className={"tab" + (view === "grid" ? " active" : "")} onClick={() => setView("grid")}>Effectiveness grid</button>
+            <button className={"tab" + (view === "rollup" ? " active" : "")} onClick={() => setView("rollup")}>Federation roll-up</button>
+          </div>
+          <div className="view-host">
+            {view === "scorecard" && <ScorecardView teams={teams} />}
+            {view === "grid" && <EffectivenessGrid teams={teams} onUpdateTeam={updateTeam} />}
+            {view === "rollup" && <RollupView teams={teams} />}
+          </div>
+        </main>
+      </div>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+</script>
+</body>
+</html>
