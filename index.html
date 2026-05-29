@@ -62,6 +62,19 @@
   }
   .wordmark .dot { color: var(--terracotta); margin: 0 6px; }
   .title-block { display: flex; align-items: baseline; gap: 14px; }
+  .app-title {
+    font-family: var(--serif); font-size: 26px; font-weight: 600;
+    color: var(--ink); margin: 0; letter-spacing: -0.01em;
+    cursor: pointer; user-select: none;
+    transition: color 0.12s;
+  }
+  .app-title:hover { color: var(--cobalt); }
+  .app-title .accent { color: var(--terracotta); }
+  .app-title-sub {
+    font-family: var(--mono); font-size: 10px; font-weight: 500;
+    letter-spacing: 0.14em; text-transform: uppercase; color: var(--mute);
+    margin-left: 4px;
+  }
   .badge {
     font-family: var(--mono); font-size: 10px; font-weight: 500;
     letter-spacing: 0.1em; text-transform: uppercase;
@@ -574,10 +587,47 @@
     font-family: var(--mono); font-size: 9.5px; font-weight: 500;
     letter-spacing: 0.1em; text-transform: uppercase;
     color: var(--mute);
-    padding: 10px 20px 0;
-    display: flex; gap: 14px; align-items: center; flex-wrap: wrap;
+    padding: 10px 20px;
+    border-top: 1px solid var(--rule-soft);
+    background: var(--paper);
+    display: flex; gap: 18px; align-items: center; flex-wrap: wrap;
   }
   .legend-line .badge-crm, .legend-line .badge-self { font-size: 8.5px; }
+
+  /* Grid legend bar — replaces the absolute-positioned overlay */
+  .grid-legend-bar {
+    margin-top: 16px;
+    padding: 14px 18px;
+    background: var(--paper-tint);
+    border: 1px solid var(--rule);
+    border-radius: 2px;
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 12px 24px;
+    max-width: 880px; width: 100%;
+  }
+  .grid-legend-bar .quad-entry {
+    display: flex; gap: 8px; align-items: flex-start;
+    font-size: 11.5px; color: var(--ink-2);
+  }
+  .grid-legend-bar .quad-num {
+    font-family: var(--mono); font-size: 11px; font-weight: 500;
+    color: var(--cobalt); flex-shrink: 0; width: 14px;
+  }
+  .grid-legend-bar .quad-text strong {
+    font-family: var(--serif); font-weight: 500; color: var(--ink);
+  }
+  .grid-legend-bar h4 {
+    margin: 0 0 6px;
+    font-family: var(--mono); font-size: 9.5px; font-weight: 500;
+    letter-spacing: 0.14em; text-transform: uppercase; color: var(--cobalt);
+  }
+  .grid-stage.column {
+    flex-direction: column;
+    justify-content: flex-start;
+    align-items: center;
+    padding: 20px 30px 30px;
+    overflow-y: auto;
+  }
 
   /* Scrollbar */
   .left-pane::-webkit-scrollbar, .view-host::-webkit-scrollbar { width: 8px; }
@@ -642,15 +692,18 @@ const PURPOSE_LIKERTS = [
 ];
 
 /* Quadrant strategy labels — adapted from Cushman/Hackman framing */
+/* Quadrant strategy positions match the data axes:
+   x > 0 = leader-distributed, x < 0 = organizer-led
+   y > 0 = strategic (top), y < 0 = reactive (bottom) */
 const QUADRANTS = [
   { num: "1", strategy: "Effective", note: "Distributed leadership + strategic clarity",
-    sxFrac: 0.5, syFrac: -0.5 },
-  { num: "2", strategy: "Coach into strategy", note: "Distributed but mobilizing, not organizing",
-    sxFrac: -0.5, syFrac: -0.5 },
-  { num: "3", strategy: "Develop core leaders", note: "Strategic but organizer-dependent",
-    sxFrac: 0.5, syFrac: 0.5 },
+    sxFrac: 0.6, syFrac: 0.6 },   // upper-right
+  { num: "2", strategy: "Develop core leaders", note: "Strategic but organizer-dependent",
+    sxFrac: -0.6, syFrac: 0.6 },  // upper-left
+  { num: "3", strategy: "Coach into strategy", note: "Distributed but mobilizing, not organizing",
+    sxFrac: 0.6, syFrac: -0.6 },  // lower-right
   { num: "4", strategy: "Restart / rebuild", note: "Neither distributed nor strategic",
-    sxFrac: -0.5, syFrac: 0.5 },
+    sxFrac: -0.6, syFrac: -0.6 }, // lower-left
 ];
 
 /* ========= Seed data ========= */
@@ -874,10 +927,10 @@ function effectiveGridPos(t) {
 
 function teamQuadrant(t) {
   const { x, y } = effectiveGridPos(t);
-  if (x >= 0 && y >= 0) return QUADRANTS[0]; // Effective (upper-right when y is "strategic")
-  if (x < 0  && y >= 0) return QUADRANTS[2]; // Develop core leaders — strategic but not distributed
-  if (x >= 0 && y < 0)  return QUADRANTS[1]; // Coach into strategy — distributed but not strategic
-  return QUADRANTS[3]; // Restart / rebuild
+  if (x >= 0 && y >= 0) return QUADRANTS[0]; // upper-right: Effective
+  if (x < 0  && y >= 0) return QUADRANTS[1]; // upper-left: Develop core leaders
+  if (x >= 0 && y < 0)  return QUADRANTS[2]; // lower-right: Coach into strategy
+  return QUADRANTS[3];                       // lower-left: Restart / rebuild
 }
 
 /* Signal colors based on score thresholds */
@@ -898,10 +951,11 @@ function CrmBadge() { return <span className="badge-crm" title="Could be auto-fi
 function SelfBadge() { return <span className="badge-self" title="Coach / organizer judgment — cannot be derived from records">Self</span>; }
 
 function FieldLabel({ children, prov }) {
+  /* Default behavior = self-report. Only CRM-fillable fields get a badge. */
   return (
     <label>
       <span className="lbl-text">{children}</span>
-      {prov === PROVENANCE.CRM ? <CrmBadge /> : <SelfBadge />}
+      {prov === PROVENANCE.CRM ? <CrmBadge /> : null}
     </label>
   );
 }
@@ -1103,7 +1157,7 @@ function TeamForm({ initial, onCommit, onCancel, crmConnected }) {
         <div className="form-subsection-sub">Bounded membership, working together to accomplish their work, stable long enough to accomplish something meaningful.</div>
 
         <div className="field">
-          <FieldLabel prov={PROVENANCE.CRM}>Bounded membership — people know who's on the team</FieldLabel>
+          <FieldLabel prov={PROVENANCE.SELF}>Bounded membership — people know who's on the team</FieldLabel>
           <YesNo value={draft.boundedMembership} onChange={v => set("boundedMembership", v)} />
         </div>
 
@@ -1476,8 +1530,8 @@ function EffectivenessGrid({ teams, onUpdateTeam }) {
   }));
 
   return (
-    <div className="grid-stage" ref={hostRef}>
-      <svg className="grid-svg" viewBox={`0 0 ${side} ${side}`} width={side} height={side}>
+    <div className="grid-stage column" ref={hostRef}>
+      <svg className="grid-svg" viewBox={`0 0 ${side} ${side}`} width={side} height={side} style={{maxHeight: "min(72vh, 720px)"}}>
         {/* Axes */}
         <line x1={cx - half} y1={cy} x2={cx + half} y2={cy} stroke="var(--rule)" strokeWidth="1" />
         <line x1={cx} y1={cy - half} x2={cx} y2={cy + half} stroke="var(--rule)" strokeWidth="1" />
@@ -1531,17 +1585,22 @@ function EffectivenessGrid({ teams, onUpdateTeam }) {
         })}
       </svg>
 
-      <div className="legend">
-        <h3>Quadrants</h3>
-        {QUADRANTS.map((q, i) => (
-          <div key={i} className="item">
-            <span style={{fontFamily:"var(--mono)",fontSize:10,color:"var(--cobalt)",width:14}}>{q.num}</span>
-            <span><strong style={{fontFamily:"var(--serif)",fontWeight:500}}>{q.strategy}</strong> — {q.note}</span>
+      <div className="grid-legend-bar">
+        <div>
+          <h4>Quadrants</h4>
+          {QUADRANTS.map((q, i) => (
+            <div key={i} className="quad-entry">
+              <span className="quad-num">{q.num}</span>
+              <span className="quad-text"><strong>{q.strategy}</strong> — {q.note}</span>
+            </div>
+          ))}
+        </div>
+        <div>
+          <h4>Reading the chart</h4>
+          <div className="quad-entry" style={{color:"var(--mute)"}}>
+            <span>Dot color = Health Index (green / yellow / red). Dot size = members.
+            Position auto-seeds from sub-scores. Drag any dot to reposition.</span>
           </div>
-        ))}
-        <h3>Dot</h3>
-        <div className="item" style={{fontSize: 11, color: "var(--mute)"}}>
-          Color = Health Index. Size = members. Drag to reposition.
         </div>
       </div>
 
@@ -1688,6 +1747,11 @@ function App() {
     setTeams(seedTeams());
   };
 
+  const goHome = () => {
+    setOpenSection("list");
+    setView("scorecard");
+  };
+
   const exportJSON = () => {
     const payload = { fed, teams, exportedAt: new Date().toISOString() };
     const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
@@ -1705,7 +1769,10 @@ function App() {
     <div className="app">
       <header className="topbar">
         <div className="title-block">
-          <span className="wordmark">Team Effectiveness Instrument</span>
+          <h1 className="app-title" onClick={goHome} title="Back to home">
+            Team Effectiveness <span className="accent">Instrument</span>
+          </h1>
+          <span className="app-title-sub">Civic Power Lab · prototype</span>
         </div>
         <div style={{display:"flex", alignItems:"center", gap:14}}>
           <label style={{display:"flex", alignItems:"center", gap:6, fontFamily:"var(--mono)", fontSize:10, letterSpacing:"0.12em", textTransform:"uppercase", color:"var(--mute)", cursor:"pointer"}}>
@@ -1721,11 +1788,6 @@ function App() {
           </div>
         </div>
       </header>
-
-      <div className="legend-line">
-        <span><CrmBadge /> = could be auto-filled from the org's CRM of record (Groundwork, EveryAction, Salsa, Airtable, …)</span>
-        <span><SelfBadge /> = coach / organizer judgment</span>
-      </div>
 
       <div className="pane-wrap">
         <aside className="left-pane">
@@ -1761,7 +1823,7 @@ function App() {
                     <input value={fed.scorer} onChange={e => setFed({...fed, scorer: e.target.value})} placeholder="Whose judgment is this?" />
                   </div>
                 </div>
-                <p className="note-line">When CRM is connected, the teal-shaded fields draw directly from the org's records: counts, meeting cadence, attendance, rubric placements. The organizer doesn't grade themselves on countable facts — only on practice and purpose.</p>
+                <p className="note-line">When the federation's CRM is connected, fields tagged <CrmBadge /> draw directly from the org's records — counts, meeting cadence, attendance, rubric placements. The organizer doesn't grade themselves on countable facts. Everything else is coach / organizer judgment.</p>
               </div>
             )}
           </section>
@@ -1823,6 +1885,10 @@ function App() {
             {view === "rollup" && <RollupView teams={teams} />}
           </div>
         </main>
+      </div>
+
+      <div className="legend-line">
+        <span><CrmBadge /> = could be auto-filled from the org's CRM of record (Groundwork, EveryAction, Salsa, Airtable, …). Fields without this tag are coach / organizer judgment.</span>
       </div>
     </div>
   );
