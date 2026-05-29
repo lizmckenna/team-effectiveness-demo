@@ -8,6 +8,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,opsz,wght@0,8..60,300..700;1,8..60,300..700&family=Work+Sans:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 
 <style>
   :root {
@@ -629,6 +630,41 @@
     overflow-y: auto;
   }
 
+  /* Leaflet overrides — match the paper aesthetic */
+  #geo-leaflet-map {
+    height: min(72vh, 720px);
+    width: 100%;
+    max-width: 980px;
+    border: 1px solid var(--rule);
+    border-radius: 4px;
+    background: var(--cream-2);
+  }
+  .leaflet-tooltip {
+    background: var(--paper) !important;
+    border: 1px solid var(--ink) !important;
+    color: var(--ink) !important;
+    font-family: var(--sans) !important;
+    font-size: 12.5px !important;
+    padding: 8px 11px !important;
+    border-radius: 3px !important;
+    box-shadow: 2px 2px 0 rgba(0,0,0,0.12) !important;
+    line-height: 1.45 !important;
+  }
+  .leaflet-tooltip .tt-name {
+    font-family: var(--serif); font-weight: 500; font-size: 14px; color: var(--ink);
+  }
+  .leaflet-tooltip .tt-meta { color: var(--mute); font-size: 11.5px; margin-top: 2px; }
+  .leaflet-tooltip .tt-scores {
+    font-family: var(--mono); font-size: 10px; letter-spacing: 0.08em;
+    text-transform: uppercase; margin-top: 5px; color: var(--ink-2);
+  }
+  .leaflet-tooltip-top:before { border-top-color: var(--ink) !important; }
+  .leaflet-tooltip-bottom:before { border-bottom-color: var(--ink) !important; }
+  .leaflet-tooltip-left:before { border-left-color: var(--ink) !important; }
+  .leaflet-tooltip-right:before { border-right-color: var(--ink) !important; }
+  .leaflet-container { font-family: var(--sans) !important; }
+  .leaflet-control-attribution { font-size: 9.5px !important; }
+
   /* Scrollbar */
   .left-pane::-webkit-scrollbar, .view-host::-webkit-scrollbar { width: 8px; }
   .left-pane::-webkit-scrollbar-track, .view-host::-webkit-scrollbar-track { background: transparent; }
@@ -638,6 +674,7 @@
 
 <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
 <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 </head>
 <body>
@@ -692,25 +729,6 @@ const PURPOSE_LIKERTS = [
 ];
 
 /* Quadrant strategy labels — adapted from Cushman/Hackman framing */
-/* California outline + projection for the Geographic view.
-   bbox ≈ 32.5–42.0 N, -124.5 to -114.1 W.
-   Path is a hand-traced simplified polygon — recognizable, not survey-grade. */
-const CA_PROJ = { minLat: 32.5, maxLat: 42.0, minLng: -124.5, maxLng: -114.1 };
-const CA_W = 400, CA_H = 600;
-const caProjX = (lng) => (lng - CA_PROJ.minLng) / (CA_PROJ.maxLng - CA_PROJ.minLng) * CA_W;
-const caProjY = (lat) => (CA_PROJ.maxLat - lat) / (CA_PROJ.maxLat - CA_PROJ.minLat) * CA_H;
-const CA_PATH = "M 12 0 L 173 0 L 173 189 L 212 253 L 381 392 L 381 587 L 285 600 L 231 537 L 150 474 L 139 417 L 100 360 L 92 316 L 77 265 L 58 227 L 27 158 L 12 63 Z";
-
-const CA_CITIES = [
-  { name: "San Francisco", lat: 37.77, lng: -122.42, dx: -6, dy: -4, anchor: "end" },
-  { name: "Oakland",       lat: 37.80, lng: -122.27, dx:  6, dy:  3, anchor: "start" },
-  { name: "San Jose",      lat: 37.34, lng: -121.89, dx:  6, dy:  3, anchor: "start" },
-  { name: "Sacramento",    lat: 38.58, lng: -121.49, dx:  6, dy:  3, anchor: "start" },
-  { name: "Fresno",        lat: 36.74, lng: -119.78, dx:  6, dy:  3, anchor: "start" },
-  { name: "Los Angeles",   lat: 34.05, lng: -118.24, dx: -6, dy:  3, anchor: "end" },
-  { name: "San Diego",     lat: 32.71, lng: -117.16, dx:  6, dy:  3, anchor: "start" },
-];
-
 /* Quadrant strategy positions match the data axes:
    x > 0 = leader-distributed, x < 0 = organizer-led
    y > 0 = strategic (top), y < 0 = reactive (bottom) */
@@ -967,6 +985,12 @@ function signalColor(v) {
   if (v >= 75) return "var(--signal-green)";
   if (v >= 50) return "var(--signal-yellow)";
   return "var(--signal-red)";
+}
+/* Leaflet can't read CSS vars — duplicate the signal palette as hex. */
+function signalHex(v) {
+  if (v >= 75) return "#4a7c3a";
+  if (v >= 50) return "#c89342";
+  return "#b7432b";
 }
 
 /* ========= Form pieces ========= */
@@ -1664,56 +1688,67 @@ function EffectivenessGrid({ teams, onUpdateTeam }) {
 
 /* ========= Geographic view ========= */
 
+/* Real California map via Leaflet + OpenStreetMap tiles.
+   Mirrors the pattern used in the MO results dashboard at
+   lizmckenna.github.io/groundwork/pilot/results-5-26-x7k3m9/ */
 function GeoMap({ teams }) {
-  const [tip, setTip] = useState(null);
-  const hostRef = useRef(null);
+  const mapRef = useRef(null);
+  const mapInstance = useRef(null);
+  const markerLayer = useRef(null);
+
+  /* Initialize the map once */
+  useEffect(() => {
+    if (!mapRef.current || mapInstance.current) return;
+    const map = L.map(mapRef.current, {
+      center: [37.3, -119.5],
+      zoom: 6,
+      scrollWheelZoom: true,
+      zoomSnap: 0.5,
+    });
+    L.tileLayer("https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png", {
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
+      subdomains: "abcd",
+      maxZoom: 19,
+    }).addTo(map);
+    markerLayer.current = L.layerGroup().addTo(map);
+    mapInstance.current = map;
+  }, []);
+
+  /* Re-render markers whenever teams change */
+  useEffect(() => {
+    if (!mapInstance.current || !markerLayer.current) return;
+    markerLayer.current.clearLayers();
+    const located = teams.filter(t => t.lat != null && t.lng != null);
+    located.forEach(t => {
+      const s = scoreTeam(t);
+      const fill = signalHex(s.hi);
+      const radius = 8 + Math.min(t.members || 0, 30) * 0.55;
+      const marker = L.circleMarker([t.lat, t.lng], {
+        radius,
+        fillColor: fill,
+        color: "#171514",
+        weight: 1.2,
+        opacity: 1,
+        fillOpacity: 0.82,
+      });
+      marker.bindTooltip(
+        '<div class="tt-name">' + t.name + '</div>' +
+        '<div class="tt-meta">' + (t.constituencyDetail || "—") + '</div>' +
+        '<div class="tt-scores">Health ' + s.hi + ' · ' + (t.members || 0) + ' members · ' + (t.coreLeaders || 0) + ' core leaders</div>',
+        { direction: "top", offset: [0, -8] }
+      );
+      marker.addTo(markerLayer.current);
+    });
+    /* Auto-fit to located teams (only if there are at least 2) */
+    if (located.length >= 2) {
+      const bounds = L.latLngBounds(located.map(t => [t.lat, t.lng]));
+      mapInstance.current.fitBounds(bounds, { padding: [40, 40], maxZoom: 8 });
+    }
+  }, [teams]);
+
   return (
-    <div className="grid-stage column" ref={hostRef}>
-      <svg className="grid-svg" viewBox={`0 0 ${CA_W} ${CA_H}`} width={CA_W} height={CA_H}
-           style={{maxHeight: "min(72vh, 720px)", background: "var(--paper-tint)"}}>
-        {/* California outline */}
-        <path d={CA_PATH} fill="var(--cream-2)" stroke="var(--mute)" strokeWidth="1.2" />
-
-        {/* City reference dots */}
-        {CA_CITIES.map((c, i) => {
-          const x = caProjX(c.lng), y = caProjY(c.lat);
-          return (
-            <g key={i}>
-              <circle cx={x} cy={y} r="2.4" fill="var(--mute)" />
-              <text x={x + c.dx} y={y + c.dy} textAnchor={c.anchor}
-                    style={{fontFamily: "var(--mono)", fontSize: 10, fontWeight: 500,
-                            fill: "var(--mute)", letterSpacing: "0.05em"}}>
-                {c.name}
-              </text>
-            </g>
-          );
-        })}
-
-        {/* Team dots */}
-        {teams.filter(t => t.lat != null && t.lng != null).map(t => {
-          const x = caProjX(t.lng), y = caProjY(t.lat);
-          const s = scoreTeam(t);
-          const color = signalColor(s.hi);
-          const r = 7 + Math.min(t.members || 0, 30) * 0.7;
-          return (
-            <g key={t.id}
-               onMouseEnter={(e) => {
-                 const rect = hostRef.current.getBoundingClientRect();
-                 setTip({ x: e.clientX - rect.left, y: e.clientY - rect.top, team: t, scores: s });
-               }}
-               onMouseMove={(e) => {
-                 if (!tip) return;
-                 const rect = hostRef.current.getBoundingClientRect();
-                 setTip(p => p ? { ...p, x: e.clientX - rect.left, y: e.clientY - rect.top } : p);
-               }}
-               onMouseLeave={() => setTip(null)}>
-              <circle cx={x} cy={y} r={r} fill={color}
-                      stroke="rgba(23,21,20,0.5)" strokeWidth="1.2" opacity="0.88" />
-            </g>
-          );
-        })}
-      </svg>
-
+    <div className="grid-stage column">
+      <div id="geo-leaflet-map" ref={mapRef}></div>
       <div className="grid-legend-bar">
         <div>
           <h4>Reading the map</h4>
@@ -1732,19 +1767,6 @@ function GeoMap({ teams }) {
           </div>
         </div>
       </div>
-
-      {tip && tip.team && (
-        <div className="map-tooltip" style={{
-          left: Math.min(tip.x + 14, CA_W + 60),
-          top: tip.y + 14
-        }}>
-          <div className="tt-name">{tip.team.name}</div>
-          <div className="tt-meta">{tip.team.constituencyDetail || "—"}</div>
-          <div className="tt-scores">
-            Health {tip.scores.hi} · {tip.team.members} members · {tip.team.coreLeaders} core leaders
-          </div>
-        </div>
-      )}
     </div>
   );
 }
