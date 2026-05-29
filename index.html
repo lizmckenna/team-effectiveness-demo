@@ -450,15 +450,15 @@
   }
   .grid-svg { max-width: 100%; max-height: 100%; cursor: default; }
   .grid-quad-label {
-    font-family: var(--mono); font-size: 9.5px; font-weight: 500;
-    letter-spacing: 0.14em; text-transform: uppercase; fill: var(--mute);
+    font-family: var(--mono); font-size: 13px; font-weight: 600;
+    letter-spacing: 0.14em; text-transform: uppercase; fill: var(--ink-2);
   }
   .grid-quad-strategy {
-    font-family: var(--serif); font-size: 12px; font-style: italic;
-    fill: var(--ink-2);
+    font-family: var(--serif); font-size: 17px; font-weight: 600; font-style: normal;
+    fill: var(--ink);
   }
   .grid-axis-label {
-    font-family: var(--mono); font-size: 10px; font-weight: 500;
+    font-family: var(--mono); font-size: 13px; font-weight: 600;
     letter-spacing: 0.16em; text-transform: uppercase; fill: var(--cobalt);
   }
   .grid-dot { cursor: grab; }
@@ -692,6 +692,25 @@ const PURPOSE_LIKERTS = [
 ];
 
 /* Quadrant strategy labels — adapted from Cushman/Hackman framing */
+/* California outline + projection for the Geographic view.
+   bbox ≈ 32.5–42.0 N, -124.5 to -114.1 W.
+   Path is a hand-traced simplified polygon — recognizable, not survey-grade. */
+const CA_PROJ = { minLat: 32.5, maxLat: 42.0, minLng: -124.5, maxLng: -114.1 };
+const CA_W = 400, CA_H = 600;
+const caProjX = (lng) => (lng - CA_PROJ.minLng) / (CA_PROJ.maxLng - CA_PROJ.minLng) * CA_W;
+const caProjY = (lat) => (CA_PROJ.maxLat - lat) / (CA_PROJ.maxLat - CA_PROJ.minLat) * CA_H;
+const CA_PATH = "M 12 0 L 173 0 L 173 189 L 212 253 L 381 392 L 381 587 L 285 600 L 231 537 L 150 474 L 139 417 L 100 360 L 92 316 L 77 265 L 58 227 L 27 158 L 12 63 Z";
+
+const CA_CITIES = [
+  { name: "San Francisco", lat: 37.77, lng: -122.42, dx: -6, dy: -4, anchor: "end" },
+  { name: "Oakland",       lat: 37.80, lng: -122.27, dx:  6, dy:  3, anchor: "start" },
+  { name: "San Jose",      lat: 37.34, lng: -121.89, dx:  6, dy:  3, anchor: "start" },
+  { name: "Sacramento",    lat: 38.58, lng: -121.49, dx:  6, dy:  3, anchor: "start" },
+  { name: "Fresno",        lat: 36.74, lng: -119.78, dx:  6, dy:  3, anchor: "start" },
+  { name: "Los Angeles",   lat: 34.05, lng: -118.24, dx: -6, dy:  3, anchor: "end" },
+  { name: "San Diego",     lat: 32.71, lng: -117.16, dx:  6, dy:  3, anchor: "start" },
+];
+
 /* Quadrant strategy positions match the data axes:
    x > 0 = leader-distributed, x < 0 = organizer-led
    y > 0 = strategic (top), y < 0 = reactive (bottom) */
@@ -715,140 +734,145 @@ const SEED_FED = {
   crmConnected: true,
 };
 
+/* Seed teams spread across all four effectiveness quadrants AND across
+   California so the Geo tab is meaningful out of the gate. */
 const seedTeams = () => ([
   {
+    /* Upper-right · Effective — high RP + RT + CP */
     id: "t1",
-    name: "St. Augustine's Parent Team",
-    constituencyType: "congregation",
-    constituencyDetail: "St. Augustine's Catholic parish, East Oakland",
-    organizer: "Marisol Vega",
-    monthsActive: 18,
-    /* Right People — CRM-fillable */
-    coreLeaders: 5,
-    members: 12,
-    activeVolunteers: 24,
-    rubricDeveloping: 2,
-    rubricAccelerating: 2,
-    rubricPowerful: 1,
-    /* Right People — self-report */
+    name: "Westside Tenants United",
+    constituencyType: "neighborhood",
+    constituencyDetail: "West Oakland",
+    organizer: "Devon Mills",
+    monthsActive: 24,
+    coreLeaders: 5, members: 18, activeVolunteers: 34,
+    rubricDeveloping: 2, rubricAccelerating: 2, rubricPowerful: 2,
     responsibility: true, risk: true, following: true, coown: true, devtrack: true,
-    agency: 4, belonging: 5,
-    /* Real Team — CRM-fillable */
+    agency: 5, belonging: 5,
     boundedMembership: true,
-    meetsMonthly: true, meetingDay: "3rd Tuesday", meetingTime: "6:30pm",
-    stableFullCycle: true,
-    attendancePct: 82,
-    /* Real Team — self-report */
-    coAgendas: 4, consequential: 4,
-    /* Purpose — self-report */
-    powerOrientation: 4, missionClarity: 4, strategyPlace: 4,
-    mediumTermPlan: true, planBrief: "Local school facilities equity campaign — Sep target",
-    powerPlay: true, powerPlayBrief: "April school board pressure action on capital budget",
+    meetsMonthly: true, meetingDay: "1st Wednesday", meetingTime: "7:00pm",
+    stableFullCycle: true, attendancePct: 88,
+    coAgendas: 5, consequential: 5,
+    powerOrientation: 5, missionClarity: 5, strategyPlace: 5,
+    mediumTermPlan: true, planBrief: "Just-cause eviction ordinance, council vote Aug",
+    powerPlay: true, powerPlayBrief: "May rally + commitment cards from 3 council members",
     fedRepresented: true,
+    lat: 37.80, lng: -122.27,
     gridX: 0, gridY: 0,
   },
   {
+    /* Upper-right · Effective — second example to anchor that quadrant */
     id: "t2",
-    name: "Roosevelt Elementary Parents",
+    name: "Capital Area Faith Coalition",
+    constituencyType: "congregation",
+    constituencyDetail: "Six Sacramento congregations",
+    organizer: "Marisol Vega",
+    monthsActive: 20,
+    coreLeaders: 4, members: 14, activeVolunteers: 28,
+    rubricDeveloping: 1, rubricAccelerating: 2, rubricPowerful: 1,
+    responsibility: true, risk: true, following: true, coown: true, devtrack: true,
+    agency: 4, belonging: 5,
+    boundedMembership: true,
+    meetsMonthly: true, meetingDay: "3rd Tuesday", meetingTime: "6:30pm",
+    stableFullCycle: true, attendancePct: 82,
+    coAgendas: 4, consequential: 4,
+    powerOrientation: 4, missionClarity: 4, strategyPlace: 5,
+    mediumTermPlan: true, planBrief: "Education equity, state budget May vote",
+    powerPlay: true, powerPlayBrief: "Sacramento delegation meeting w/ assembly leadership",
+    fedRepresented: true,
+    lat: 38.58, lng: -121.49,
+    gridX: 0, gridY: 0,
+  },
+  {
+    /* Upper-left · Develop core leaders — strategic but organizer-dependent */
+    id: "t3",
+    name: "Boyle Heights Parent Council",
     constituencyType: "school",
-    constituencyDetail: "Roosevelt Elementary, Fruitvale",
-    organizer: "James Okafor",
-    monthsActive: 8,
-    coreLeaders: 2,
-    members: 9,
-    activeVolunteers: 18,
-    rubricDeveloping: 4,
-    rubricAccelerating: 1,
-    rubricPowerful: 0,
+    constituencyDetail: "Roosevelt HS attendance zone, East LA",
+    organizer: "Anita Reyes",
+    monthsActive: 14,
+    coreLeaders: 1, members: 16, activeVolunteers: 22,
+    rubricDeveloping: 6, rubricAccelerating: 0, rubricPowerful: 0,
+    responsibility: false, risk: false, following: false, coown: false, devtrack: true,
+    agency: 3, belonging: 4,
+    boundedMembership: true,
+    meetsMonthly: true, meetingDay: "2nd Saturday", meetingTime: "10:00am",
+    stableFullCycle: true, attendancePct: 70,
+    coAgendas: 2, consequential: 3,
+    powerOrientation: 4, missionClarity: 5, strategyPlace: 4,
+    mediumTermPlan: true, planBrief: "LAUSD facilities equity, fall school board push",
+    powerPlay: true, powerPlayBrief: "Targeted board member 1:1s + mass meeting",
+    fedRepresented: true,
+    lat: 34.03, lng: -118.21,
+    gridX: 0, gridY: 0,
+  },
+  {
+    /* Upper-left · Develop core leaders — second example */
+    id: "t4",
+    name: "Mission District Workers",
+    constituencyType: "workplace",
+    constituencyDetail: "Service-sector workers, SF Mission",
+    organizer: "Marisol Vega",
+    monthsActive: 10,
+    coreLeaders: 2, members: 13, activeVolunteers: 18,
+    rubricDeveloping: 4, rubricAccelerating: 1, rubricPowerful: 0,
     responsibility: true, risk: false, following: false, coown: false, devtrack: true,
     agency: 3, belonging: 4,
     boundedMembership: true,
-    meetsMonthly: true, meetingDay: "2nd Thursday", meetingTime: "5:30pm",
-    stableFullCycle: false,
-    attendancePct: 65,
-    coAgendas: 2, consequential: 2,
-    powerOrientation: 2, missionClarity: 3, strategyPlace: 3,
+    meetsMonthly: true, meetingDay: "2nd Sunday", meetingTime: "4:00pm",
+    stableFullCycle: false, attendancePct: 72,
+    coAgendas: 2, consequential: 3,
+    powerOrientation: 4, missionClarity: 4, strategyPlace: 4,
+    mediumTermPlan: true, planBrief: "Wage-theft ordinance, fall supervisors push",
+    powerPlay: false, powerPlayBrief: "",
+    fedRepresented: true,
+    lat: 37.76, lng: -122.42,
+    gridX: 0, gridY: 0,
+  },
+  {
+    /* Lower-right · Coach into strategy — distributed but mobilizing, not organizing */
+    id: "t5",
+    name: "Central Valley Workers Action",
+    constituencyType: "workplace",
+    constituencyDetail: "Ag and food-processing workers, Fresno-Madera",
+    organizer: "James Okafor",
+    monthsActive: 16,
+    coreLeaders: 4, members: 11, activeVolunteers: 26,
+    rubricDeveloping: 2, rubricAccelerating: 2, rubricPowerful: 0,
+    responsibility: true, risk: true, following: true, coown: true, devtrack: true,
+    agency: 4, belonging: 4,
+    boundedMembership: true,
+    meetsMonthly: true, meetingDay: "Last Thursday", meetingTime: "7:30pm",
+    stableFullCycle: true, attendancePct: 78,
+    coAgendas: 4, consequential: 3,
+    powerOrientation: 2, missionClarity: 2, strategyPlace: 2,
     mediumTermPlan: false, planBrief: "",
     powerPlay: false, powerPlayBrief: "",
     fedRepresented: false,
+    lat: 36.74, lng: -119.78,
     gridX: 0, gridY: 0,
   },
   {
-    id: "t3",
-    name: "Westside Tenants United",
+    /* Lower-left · Restart / rebuild — low on everything */
+    id: "t6",
+    name: "South Bay Tenants Network",
     constituencyType: "neighborhood",
-    constituencyDetail: "Census tracts 4012–4015, West Oakland",
-    organizer: "Devon Mills",
-    monthsActive: 24,
-    coreLeaders: 4,
-    members: 14,
-    activeVolunteers: 31,
-    rubricDeveloping: 2,
-    rubricAccelerating: 2,
-    rubricPowerful: 1,
-    responsibility: true, risk: true, following: true, coown: true, devtrack: true,
-    agency: 5, belonging: 4,
-    boundedMembership: true,
-    meetsMonthly: true, meetingDay: "1st Wednesday", meetingTime: "7:00pm",
-    stableFullCycle: true,
-    attendancePct: 88,
-    coAgendas: 5, consequential: 5,
-    powerOrientation: 5, missionClarity: 4, strategyPlace: 4,
-    mediumTermPlan: true, planBrief: "Just-cause eviction ordinance push, council vote Aug",
-    powerPlay: true, powerPlayBrief: "May rally + commitment cards from 3 council members",
-    fedRepresented: true,
-    gridX: 0, gridY: 0,
-  },
-  {
-    id: "t4",
-    name: "Cal-State East Bay Student Org",
-    constituencyType: "campus",
-    constituencyDetail: "CSUEB campus, Hayward",
+    constituencyDetail: "Chula Vista and National City",
     organizer: "Anita Reyes",
     monthsActive: 5,
-    coreLeaders: 1,
-    members: 6,
-    activeVolunteers: 11,
-    rubricDeveloping: 5,
-    rubricAccelerating: 0,
-    rubricPowerful: 0,
+    coreLeaders: 1, members: 5, activeVolunteers: 9,
+    rubricDeveloping: 4, rubricAccelerating: 0, rubricPowerful: 0,
     responsibility: false, risk: false, following: false, coown: false, devtrack: false,
     agency: 2, belonging: 3,
     boundedMembership: false,
     meetsMonthly: false, meetingDay: "", meetingTime: "",
-    stableFullCycle: false,
-    attendancePct: 40,
+    stableFullCycle: false, attendancePct: 35,
     coAgendas: 1, consequential: 1,
-    powerOrientation: 2, missionClarity: 1, strategyPlace: 2,
+    powerOrientation: 1, missionClarity: 1, strategyPlace: 2,
     mediumTermPlan: false, planBrief: "",
     powerPlay: false, powerPlayBrief: "",
     fedRepresented: false,
-    gridX: 0, gridY: 0,
-  },
-  {
-    id: "t5",
-    name: "First AME Faith Team",
-    constituencyType: "congregation",
-    constituencyDetail: "First AME Church, Oakland",
-    organizer: "Marisol Vega",
-    monthsActive: 14,
-    coreLeaders: 3,
-    members: 10,
-    activeVolunteers: 19,
-    rubricDeveloping: 1,
-    rubricAccelerating: 2,
-    rubricPowerful: 0,
-    responsibility: true, risk: false, following: true, coown: false, devtrack: true,
-    agency: 4, belonging: 5,
-    boundedMembership: true,
-    meetsMonthly: true, meetingDay: "4th Sunday", meetingTime: "12:30pm",
-    stableFullCycle: true,
-    attendancePct: 77,
-    coAgendas: 3, consequential: 3,
-    powerOrientation: 3, missionClarity: 3, strategyPlace: 4,
-    mediumTermPlan: true, planBrief: "Voter engagement for Nov local elections",
-    powerPlay: false, powerPlayBrief: "",
-    fedRepresented: true,
+    lat: 32.65, lng: -117.08,
     gridX: 0, gridY: 0,
   },
 ]);
@@ -1023,6 +1047,7 @@ function TeamForm({ initial, onCommit, onCancel, crmConnected }) {
     mediumTermPlan: false, planBrief: "",
     powerPlay: false, powerPlayBrief: "",
     fedRepresented: false,
+    lat: null, lng: null,
     gridX: 0, gridY: 0,
   };
   const [draft, setDraft] = useState(initial || blank);
@@ -1085,6 +1110,23 @@ function TeamForm({ initial, onCommit, onCancel, crmConnected }) {
                    onChange={e => setNum("monthsActive", e.target.value)} />
           </div>
         </div>
+        <div className="field-row">
+          <div className="field">
+            <FieldLabel prov={PROVENANCE.CRM}>Latitude</FieldLabel>
+            <input type="number" step="0.001" className={crmClass(draft.lat)}
+                   value={draft.lat ?? ""}
+                   onChange={e => set("lat", e.target.value === "" ? null : Number(e.target.value))}
+                   placeholder="e.g., 37.80" />
+          </div>
+          <div className="field">
+            <FieldLabel prov={PROVENANCE.CRM}>Longitude</FieldLabel>
+            <input type="number" step="0.001" className={crmClass(draft.lng)}
+                   value={draft.lng ?? ""}
+                   onChange={e => set("lng", e.target.value === "" ? null : Number(e.target.value))}
+                   placeholder="e.g., -122.27" />
+          </div>
+        </div>
+        <p className="note-line">Lat/lng plots the team on the Geographic view. Geocoding from address would happen in production.</p>
       </div>
 
       {/* Right People */}
@@ -1548,7 +1590,7 @@ function EffectivenessGrid({ teams, onUpdateTeam }) {
         {quadCoords.map((q, i) => (
           <g key={i}>
             <text className="grid-quad-label" x={q.sx} y={q.sy} textAnchor="middle">{q.num}</text>
-            <text className="grid-quad-strategy" x={q.sx} y={q.sy + 18} textAnchor="middle">{q.strategy}</text>
+            <text className="grid-quad-strategy" x={q.sx} y={q.sy + 24} textAnchor="middle">{q.strategy}</text>
           </g>
         ))}
 
@@ -1613,6 +1655,93 @@ function EffectivenessGrid({ teams, onUpdateTeam }) {
           <div className="tt-meta">{tip.team.constituencyDetail || "—"}</div>
           <div className="tt-scores">
             Health {tip.scores.hi} · RP {tip.scores.rp} · RT {tip.scores.rt} · CP {tip.scores.cp}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ========= Geographic view ========= */
+
+function GeoMap({ teams }) {
+  const [tip, setTip] = useState(null);
+  const hostRef = useRef(null);
+  return (
+    <div className="grid-stage column" ref={hostRef}>
+      <svg className="grid-svg" viewBox={`0 0 ${CA_W} ${CA_H}`} width={CA_W} height={CA_H}
+           style={{maxHeight: "min(72vh, 720px)", background: "var(--paper-tint)"}}>
+        {/* California outline */}
+        <path d={CA_PATH} fill="var(--cream-2)" stroke="var(--mute)" strokeWidth="1.2" />
+
+        {/* City reference dots */}
+        {CA_CITIES.map((c, i) => {
+          const x = caProjX(c.lng), y = caProjY(c.lat);
+          return (
+            <g key={i}>
+              <circle cx={x} cy={y} r="2.4" fill="var(--mute)" />
+              <text x={x + c.dx} y={y + c.dy} textAnchor={c.anchor}
+                    style={{fontFamily: "var(--mono)", fontSize: 10, fontWeight: 500,
+                            fill: "var(--mute)", letterSpacing: "0.05em"}}>
+                {c.name}
+              </text>
+            </g>
+          );
+        })}
+
+        {/* Team dots */}
+        {teams.filter(t => t.lat != null && t.lng != null).map(t => {
+          const x = caProjX(t.lng), y = caProjY(t.lat);
+          const s = scoreTeam(t);
+          const color = signalColor(s.hi);
+          const r = 7 + Math.min(t.members || 0, 30) * 0.7;
+          return (
+            <g key={t.id}
+               onMouseEnter={(e) => {
+                 const rect = hostRef.current.getBoundingClientRect();
+                 setTip({ x: e.clientX - rect.left, y: e.clientY - rect.top, team: t, scores: s });
+               }}
+               onMouseMove={(e) => {
+                 if (!tip) return;
+                 const rect = hostRef.current.getBoundingClientRect();
+                 setTip(p => p ? { ...p, x: e.clientX - rect.left, y: e.clientY - rect.top } : p);
+               }}
+               onMouseLeave={() => setTip(null)}>
+              <circle cx={x} cy={y} r={r} fill={color}
+                      stroke="rgba(23,21,20,0.5)" strokeWidth="1.2" opacity="0.88" />
+            </g>
+          );
+        })}
+      </svg>
+
+      <div className="grid-legend-bar">
+        <div>
+          <h4>Reading the map</h4>
+          <div className="quad-entry" style={{color:"var(--mute)"}}>
+            <span>Each circle is a team plotted at its constituency's location.
+            Color = Health Index (green / yellow / red). Size = members.
+            Hover for detail.</span>
+          </div>
+        </div>
+        <div>
+          <h4>What it reveals</h4>
+          <div className="quad-entry" style={{color:"var(--mute)"}}>
+            <span>Where the federation has depth, where it's thin, and whether the
+            strongest teams cluster in one region or spread across the state.
+            Coverage gaps become visible in a way a list never makes them.</span>
+          </div>
+        </div>
+      </div>
+
+      {tip && tip.team && (
+        <div className="map-tooltip" style={{
+          left: Math.min(tip.x + 14, CA_W + 60),
+          top: tip.y + 14
+        }}>
+          <div className="tt-name">{tip.team.name}</div>
+          <div className="tt-meta">{tip.team.constituencyDetail || "—"}</div>
+          <div className="tt-scores">
+            Health {tip.scores.hi} · {tip.team.members} members · {tip.team.coreLeaders} core leaders
           </div>
         </div>
       )}
@@ -1772,7 +1901,6 @@ function App() {
           <h1 className="app-title" onClick={goHome} title="Back to home">
             Team Effectiveness <span className="accent">Instrument</span>
           </h1>
-          <span className="app-title-sub">Civic Power Lab · prototype</span>
         </div>
         <div style={{display:"flex", alignItems:"center", gap:14}}>
           <label style={{display:"flex", alignItems:"center", gap:6, fontFamily:"var(--mono)", fontSize:10, letterSpacing:"0.12em", textTransform:"uppercase", color:"var(--mute)", cursor:"pointer"}}>
@@ -1791,13 +1919,6 @@ function App() {
 
       <div className="pane-wrap">
         <aside className="left-pane">
-
-          <div style={{padding:"20px 20px 4px"}}>
-            <h1 style={{fontFamily:"var(--serif)", fontSize:22, fontWeight:400, margin:"0 0 4px"}}>Team Effectiveness</h1>
-            <p style={{fontFamily:"var(--serif)", fontSize:13, color:"var(--ink-2)", margin:"0 0 8px", lineHeight:1.5}}>
-              A snapshot of how many <em>effective</em> organizing teams the federation currently has — scored on Wageman &amp; Hackman's three essential conditions, with PICO's organizing-context additions.
-            </p>
-          </div>
 
           <section className="section">
             <div className="section-header" onClick={() => toggleSection("fed")}>
@@ -1877,11 +1998,13 @@ function App() {
           <div className="tabs">
             <button className={"tab" + (view === "scorecard" ? " active" : "")} onClick={() => setView("scorecard")}>Scorecard</button>
             <button className={"tab" + (view === "grid" ? " active" : "")} onClick={() => setView("grid")}>Effectiveness grid</button>
+            <button className={"tab" + (view === "geo" ? " active" : "")} onClick={() => setView("geo")}>Geographic</button>
             <button className={"tab" + (view === "rollup" ? " active" : "")} onClick={() => setView("rollup")}>Federation roll-up</button>
           </div>
           <div className="view-host">
             {view === "scorecard" && <ScorecardView teams={teams} />}
             {view === "grid" && <EffectivenessGrid teams={teams} onUpdateTeam={updateTeam} />}
+            {view === "geo" && <GeoMap teams={teams} />}
             {view === "rollup" && <RollupView teams={teams} />}
           </div>
         </main>
