@@ -98,6 +98,20 @@
     padding: 2px 5px; border-radius: 3px;
     vertical-align: middle;
   }
+  .badge-dev {
+    display: inline-flex; align-items: center; gap: 5px;
+    font-family: var(--sans); font-size: 11px; font-weight: 500;
+    letter-spacing: 0; text-transform: none;
+    background: rgba(92,125,250,0.1); color: var(--cobalt);
+    border: 1px solid var(--cobalt-soft);
+    padding: 3px 8px; border-radius: 999px;
+    margin-top: 6px;
+  }
+  .badge-dev::before {
+    content: ""; display: inline-block;
+    width: 6px; height: 6px; border-radius: 50%;
+    background: var(--cobalt);
+  }
   .badge-self {
     font-family: var(--mono); font-size: 9px; font-weight: 500;
     letter-spacing: 0.08em; text-transform: uppercase;
@@ -148,9 +162,10 @@
     border-radius: 2px;
     transition: border-color 0.15s;
   }
+  /* CRM-prefilled fields: brand-purple highlight (replaces the earlier teal/green) */
   .field input.crm-filled, .field select.crm-filled, .field textarea.crm-filled {
-    background: #e9f0ee;
-    border-color: var(--teal);
+    background: rgba(92,125,250,0.06);
+    border-color: var(--cobalt-soft);
   }
   .field textarea { resize: vertical; min-height: 50px; font-family: var(--sans); }
   .field input:focus, .field select:focus, .field textarea:focus {
@@ -221,25 +236,67 @@
   .yn button.selected.yes { background: var(--cobalt); color: var(--paper); }
   .yn button.selected.no { background: var(--terracotta); color: var(--paper); }
 
-  /* Check group */
-  .check-group { display: flex; flex-direction: column; gap: 6px; }
+  /* Check group — same pattern as Faces of Power in power-mapping demo */
+  .check-group { display: flex; flex-direction: column; gap: 4px; }
+  .check-row-wrap { display: flex; flex-direction: column; }
   .check-row {
-    display: grid; grid-template-columns: 18px 1fr;
-    align-items: start; gap: 10px;
-    padding: 9px 11px;
-    border: 1px solid var(--rule); border-radius: 2px;
-    background: var(--paper); cursor: pointer;
-    transition: border-color 0.12s, background 0.12s;
+    display: flex; align-items: center; gap: 10px;
+    padding: 9px 12px;
+    border: 1px solid var(--rule); border-radius: 4px;
+    background: var(--paper);
+    transition: background 0.12s, border-color 0.12s;
+    user-select: none;
   }
-  .check-row:hover { border-color: var(--cobalt-soft); }
-  .check-row.selected { background: #e9e0ca; border-color: var(--cobalt); }
-  .check-row input {
-    margin: 0; accent-color: var(--cobalt);
-    width: 14px; height: 14px; margin-top: 2px;
+  .check-row.selected { background: rgba(92,125,250,0.08); border-color: var(--cobalt); }
+  .check-row .check-toggle {
+    flex: 1;
+    display: flex; align-items: center; gap: 10px;
+    cursor: pointer; min-width: 0;
   }
-  .check-row .check-text {
-    font-family: var(--sans); font-size: 13px; line-height: 1.45; color: var(--ink);
-    min-width: 0;
+  .check-row .check-box {
+    width: 16px; height: 16px; flex-shrink: 0;
+    border: 1.5px solid var(--rule); border-radius: 3px;
+    background: var(--paper);
+    display: inline-flex; align-items: center; justify-content: center;
+    transition: background 0.12s, border-color 0.12s;
+  }
+  .check-row.selected .check-box {
+    background: var(--cobalt); border-color: var(--cobalt);
+  }
+  .check-row .check-box::after {
+    content: ""; opacity: 0;
+    width: 9px; height: 5px;
+    border-left: 2px solid var(--paper);
+    border-bottom: 2px solid var(--paper);
+    transform: rotate(-45deg) translate(1px, -1px);
+    transition: opacity 0.12s;
+  }
+  .check-row.selected .check-box::after { opacity: 1; }
+  .check-row .check-label {
+    flex: 1;
+    font-family: var(--sans); font-weight: 500; font-size: 13px; color: var(--ink);
+    line-height: 1.35; letter-spacing: 0;
+    transition: color 0.12s;
+  }
+  .check-row .check-toggle:hover .check-label { color: var(--cobalt); }
+  .check-info-btn {
+    flex-shrink: 0;
+    width: 20px; height: 20px;
+    display: inline-flex; align-items: center; justify-content: center;
+    border-radius: 50%;
+    background: var(--cobalt); color: var(--paper);
+    font-family: var(--display); font-size: 12px; font-weight: 700;
+    border: none; cursor: pointer; padding: 0;
+    transition: background 0.12s, transform 0.12s;
+  }
+  .check-info-btn:hover { background: var(--cobalt-deep); }
+  .check-info-btn.open { background: var(--ink); transform: rotate(45deg); }
+  .check-desc {
+    margin-top: 8px; padding: 10px 12px;
+    background: var(--paper-tint);
+    border: 1px solid var(--rule); border-radius: 4px;
+    font-family: var(--sans); font-size: 12.5px; line-height: 1.55;
+    color: var(--ink-2);
   }
 
   /* Buttons */
@@ -464,14 +521,22 @@
     padding: 30px;
   }
   .grid-svg { max-width: 100%; max-height: 100%; cursor: default; }
-  .grid-quad-label {
-    font-family: var(--mono); font-size: 9px; font-weight: 500;
-    letter-spacing: 0.12em; text-transform: uppercase; fill: #a1a1aa;
-    opacity: 0.7;
+  /* Quadrant labels rendered as small HTML badges absolutely positioned over the SVG,
+     so they stay readable above data dots without ink-overlap. */
+  .quad-badge {
+    position: absolute; z-index: 2;
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 5px 9px;
+    background: rgba(255,255,255,0.95);
+    border: 1px solid var(--rule); border-radius: 999px;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+    font-family: var(--sans); font-size: 11.5px; font-weight: 500;
+    color: var(--ink-2); letter-spacing: 0;
+    pointer-events: none; white-space: nowrap;
   }
-  .grid-quad-strategy {
-    font-family: var(--sans); font-size: 11px; font-weight: 400;
-    fill: #a1a1aa; letter-spacing: 0; opacity: 0.85;
+  .quad-badge .quad-num {
+    font-family: var(--mono); font-size: 10px; font-weight: 600;
+    color: var(--cobalt); letter-spacing: 0.06em;
   }
   .grid-axis-label {
     font-family: var(--mono); font-size: 11px; font-weight: 600;
@@ -721,15 +786,15 @@ const PROVENANCE = {
 };
 
 const RIGHT_PEOPLE_CHECKS = [
-  { key: "responsibility", label: "Core leaders consistently take responsibility for the team's work." },
-  { key: "risk",           label: "Core leaders take risks, try things that might fail." },
-  { key: "following",      label: "Each core leader has a base of leaders they're developing and leveraging." },
-  { key: "coown",          label: "Core leaders co-own and co-create the strategy / campaign with their organizer." },
-  { key: "devtrack",       label: "Each core leader has been assessed on the powerful-leader rubric and has a plan to move toward powerful." },
+  { key: "responsibility", short: "Take responsibility",       label: "Core leaders consistently take responsibility for the team's work." },
+  { key: "risk",           short: "Take risks",                label: "Core leaders take risks, try things that might fail." },
+  { key: "following",      short: "Develop a following",       label: "Each core leader has a base of leaders they're developing and leveraging." },
+  { key: "coown",          short: "Co-own the strategy",       label: "Core leaders co-own and co-create the strategy or campaign with their organizer." },
+  { key: "devtrack",       short: "On a development track",    label: "Each core leader has been assessed on the powerful-leader rubric and has a plan to move toward powerful." },
 ];
 
 const RIGHT_PEOPLE_LIKERTS = [
-  { key: "agency",    label: "Participants with agency",  help: "Members believe they can make change and feel confident making consequential decisions in the organization." },
+  { key: "agency",    label: "Participants with agency",  help: "Members believe they can make change and feel confident making consequential decisions in the organization.", devNote: "Miriam / Liz agency instrument in development" },
   { key: "belonging", label: "Belonging",                 help: "People feel like they belong; participating in organizing is an added value to their life." },
 ];
 
@@ -764,7 +829,7 @@ const QUADRANTS = [
 /* ========= Seed data ========= */
 
 const SEED_FED = {
-  fedName: "PICO California, Sample Federation",
+  fedName: "PICO California",
   date: "2026-05-29",
   scorer: "Lisa, Hannah",
   crmConnected: true,
@@ -1058,14 +1123,48 @@ function YesNo({ value, onChange }) {
 }
 
 function CheckList({ items, values, onToggle }) {
+  // Same pattern as Faces of Power in the power-mapping demo:
+  // shorthand label always visible; click the brand-purple "+" to expand the full definition inline.
+  const [expanded, setExpanded] = useState(null);
+  const toggleExpand = (key, e) => {
+    e.stopPropagation();
+    setExpanded(prev => prev === key ? null : key);
+  };
   return (
     <div className="check-group">
-      {items.map(it => (
-        <label key={it.key} className={"check-row" + (values[it.key] ? " selected" : "")}>
-          <input type="checkbox" checked={!!values[it.key]} onChange={() => onToggle(it.key)} />
-          <span className="check-text">{it.label}</span>
-        </label>
-      ))}
+      {items.map(it => {
+        const checked = !!values[it.key];
+        const isOpen = expanded === it.key;
+        const shortLabel = it.short || it.label;
+        const fullLabel = it.label;
+        return (
+          <div key={it.key} className="check-row-wrap">
+            <div className={"check-row" + (checked ? " selected" : "")}>
+              <div
+                className="check-toggle"
+                onClick={() => onToggle(it.key)}
+                role="checkbox"
+                aria-checked={checked}
+                tabIndex={0}
+                onKeyDown={(e) => { if (e.key === " " || e.key === "Enter") { e.preventDefault(); onToggle(it.key); } }}
+              >
+                <span className="check-box"></span>
+                <span className="check-label">{shortLabel}</span>
+              </div>
+              {it.short && (
+                <button
+                  type="button"
+                  className={"check-info-btn" + (isOpen ? " open" : "")}
+                  onClick={(e) => toggleExpand(it.key, e)}
+                  aria-label={isOpen ? "Hide definition" : "Show definition"}
+                  title="Show definition"
+                >+</button>
+              )}
+            </div>
+            {isOpen && it.short && <div className="check-desc">{fullLabel}</div>}
+          </div>
+        );
+      })}
     </div>
   );
 }
@@ -1230,6 +1329,7 @@ function TeamForm({ initial, onCommit, onCancel, crmConnected }) {
           <div className="field" key={l.key}>
             <FieldLabel prov={PROVENANCE.SELF}>{l.label}</FieldLabel>
             <p className="note-line" style={{marginTop: 0, marginBottom: 6}}>{l.help}</p>
+            {l.devNote && <div className="badge-dev">{l.devNote}</div>}
             <Likert value={draft[l.key]} onChange={v => set(l.key, v)} />
           </div>
         ))}
@@ -1284,6 +1384,7 @@ function TeamForm({ initial, onCommit, onCancel, crmConnected }) {
           <div className="field" key={l.key}>
             <FieldLabel prov={PROVENANCE.SELF}>{l.label}</FieldLabel>
             <p className="note-line" style={{marginTop: 0, marginBottom: 6}}>{l.help}</p>
+            {l.devNote && <div className="badge-dev">{l.devNote}</div>}
             <Likert value={draft[l.key]} onChange={v => set(l.key, v)} />
           </div>
         ))}
@@ -1298,6 +1399,7 @@ function TeamForm({ initial, onCommit, onCancel, crmConnected }) {
           <div className="field" key={l.key}>
             <FieldLabel prov={PROVENANCE.SELF}>{l.label}</FieldLabel>
             <p className="note-line" style={{marginTop: 0, marginBottom: 6}}>{l.help}</p>
+            {l.devNote && <div className="badge-dev">{l.devNote}</div>}
             <Likert value={draft[l.key]} onChange={v => set(l.key, v)} />
           </div>
         ))}
@@ -1630,13 +1732,7 @@ function EffectivenessGrid({ teams, onUpdateTeam }) {
         <text className="grid-axis-label" x={cx + half + 22} y={cy} textAnchor="middle" dominantBaseline="middle"
               transform={`rotate(90, ${cx + half + 22}, ${cy})`}>Leader-distributed</text>
 
-        {/* Quadrant strategy labels, muted, corner-anchored so they don't crowd dots */}
-        {quadCoords.map((q, i) => (
-          <g key={i}>
-            <text className="grid-quad-label" x={q.sx} y={q.sy} textAnchor={q.anchor}>{q.num}</text>
-            <text className="grid-quad-strategy" x={q.sx} y={q.sy + 12} textAnchor={q.anchor}>{q.strategy}</text>
-          </g>
-        ))}
+        {/* Quadrant labels render AFTER team dots so pills stay on top, see below. */}
 
         {/* Team dots */}
         {teams.map(t => {
@@ -1665,6 +1761,36 @@ function EffectivenessGrid({ teams, onUpdateTeam }) {
               <text x="0" y={r + 13} textAnchor="middle"
                     className="node-label" style={{fontSize: 10}}>
                 {t.name.length > 26 ? t.name.slice(0, 24) + "…" : t.name}
+              </text>
+            </g>
+          );
+        })}
+
+        {/* Quadrant strategy pills — rendered LAST so they sit above team dots, never overlapped */}
+        {quadCoords.map((q, i) => {
+          const text = q.strategy;
+          const num = q.num;
+          const padX = 10, gap = 6, numW = 12, charW = 6.5;
+          const w = numW + gap + text.length * charW + padX * 2;
+          const h = 26;
+          const rx = q.anchor === "end" ? q.sx - w : q.sx;
+          const ry = q.sy - h / 2;
+          return (
+            <g key={"quad" + i}>
+              <rect x={rx} y={ry} width={w} height={h} rx="13" ry="13"
+                    fill="rgba(255,255,255,0.97)" stroke="var(--rule)" strokeWidth="1"
+                    style={{filter: "drop-shadow(0 1px 2px rgba(0,0,0,0.06))"}} />
+              <text x={rx + padX} y={q.sy + 1}
+                    dominantBaseline="middle" textAnchor="start"
+                    fontFamily="var(--mono)" fontSize="10" fontWeight="600"
+                    fill="var(--cobalt)" letterSpacing="0.04em">
+                {num}
+              </text>
+              <text x={rx + padX + numW + gap} y={q.sy + 1}
+                    dominantBaseline="middle" textAnchor="start"
+                    fontFamily="var(--sans)" fontSize="11.5" fontWeight="500"
+                    fill="var(--ink-2)">
+                {text}
               </text>
             </g>
           );
@@ -1944,14 +2070,14 @@ function App() {
             Team Effectiveness Instrument
           </h1>
           <span className="app-title-sub">
-            How healthy is each team in the federation right now? Scored periodically.
+            How healthy is each team right now? Scored periodically.
           </span>
         </div>
         <div style={{display:"flex", alignItems:"center", gap:14}}>
           <label style={{display:"flex", alignItems:"center", gap:6, fontFamily:"var(--sans)", fontSize:12, fontWeight:500, color:"var(--ink-2)", cursor:"pointer"}}>
             <input type="checkbox" checked={fed.crmConnected}
                    onChange={e => setFed({...fed, crmConnected: e.target.checked})}
-                   style={{accentColor: "var(--teal)"}} />
+                   style={{accentColor: "var(--cobalt)"}} />
             CRM connected
           </label>
           <span className="badge">Demo · data not saved</span>
@@ -1976,7 +2102,7 @@ function App() {
                   <button type="button" className="btn btn-ghost" onClick={() => setOpenSection("list")}>← Back to teams</button>
                 </div>
                 <div className="field">
-                  <FieldLabel prov={PROVENANCE.SELF}>Federation / network name</FieldLabel>
+                  <FieldLabel prov={PROVENANCE.SELF}>Organization name</FieldLabel>
                   <input value={fed.fedName} onChange={e => setFed({...fed, fedName: e.target.value})} />
                 </div>
                 <div className="field-row">
