@@ -2226,7 +2226,7 @@ function App() {
     // In public-demo mode, reset back to the seed data so people can poke around.
     setFed(orgMode ? orgInitialFed(orgMode) : SEED_FED);
     setTeams(orgMode ? [] : seedTeams());
-    setOpenSection(orgMode ? "add" : "list");
+    setOpenSection(orgMode ? "fed" : "list");
   };
 
   const goHome = () => {
@@ -2274,9 +2274,10 @@ function App() {
   if (detectedOrg && !orgMode) {
     return <GateScreen orgKey={detectedOrg} onAuth={(org) => {
       setOrgMode(org);
-      // Land directly on "Add a team" so Lisa's first action is to enter a real team,
-      // not click around the (now empty) scorecard.
-      setOpenSection("add");
+      // Land on Respondents so the first thing Lisa does is confirm org name +
+      // her own name. The empty scorecard on the right does the visual nudge
+      // toward adding teams.
+      setOpenSection("fed");
     }} />;
   }
 
@@ -2337,7 +2338,7 @@ function App() {
 
           <section className="section">
             <div className="section-header" onClick={() => toggleSection("fed")}>
-              <h2>Federation &amp; respondents</h2>
+              <h2>Respondents</h2>
               <span className="caret">{openSection === "fed" ? "−" : "+"}</span>
             </div>
             {openSection === "fed" && (
