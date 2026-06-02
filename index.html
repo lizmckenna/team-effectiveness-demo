@@ -31,13 +31,15 @@
     --amber: #c99633;
     --slate: #475569;
     --teal: #0e8a78;
-    /* Growth-framed signals (purple = thriving, blue = developing, grey = opportunity for growth).
+    /* Growth-framed signals (purple = thriving, marigold = developing, grey = opportunity for growth).
        No green/yellow/red because "red team" carries social weight that distorts how organizers
-       respond to weak teams (struggling teams often need more attention, not less). */
+       respond to weak teams (struggling teams often need more attention, not less). Marigold
+       gives the middle tier its own warm hue so purple/middle/grey read as three categorical
+       states, not a gradient. */
     --signal-green: #5c7dfa;            /* legacy var name, now brand purple */
     --signal-green-soft: rgba(92,125,250,0.14);
-    --signal-yellow: #3b82f6;           /* legacy var name, now blue */
-    --signal-yellow-soft: rgba(59,130,246,0.12);
+    --signal-yellow: #f59e0b;           /* legacy var name, now marigold/amber */
+    --signal-yellow-soft: rgba(245,158,11,0.14);
     --signal-red: #71717a;              /* legacy var name, now neutral grey */
     --signal-red-soft: rgba(113,113,122,0.14);
     --display: "Archivo Narrow", -apple-system, system-ui, sans-serif;
@@ -420,7 +422,7 @@
     border: 1px solid transparent;
   }
   .health-index.green  { color: #3e4f8e; background: var(--signal-green-soft);  border-color: rgba(92,125,250,0.40); }
-  .health-index.yellow { color: #1e3a8a; background: var(--signal-yellow-soft); border-color: rgba(59,130,246,0.40); }
+  .health-index.yellow { color: #92400e; background: var(--signal-yellow-soft); border-color: rgba(245,158,11,0.40); }
   .health-index.red    { color: #52525b; background: var(--signal-red-soft);    border-color: rgba(113,113,122,0.40); }
   .health-index-lbl {
     font-family: var(--sans); font-size: 11px; font-weight: 500;
@@ -753,6 +755,87 @@
   .left-pane::-webkit-scrollbar-track, .view-host::-webkit-scrollbar-track { background: transparent; }
   .left-pane::-webkit-scrollbar-thumb, .view-host::-webkit-scrollbar-thumb { background: var(--rule); border-radius: 4px; }
   .left-pane::-webkit-scrollbar-thumb:hover, .view-host::-webkit-scrollbar-thumb:hover { background: var(--mute); }
+
+  /* ===== Password gate (per-org entry screen) =====
+     Full-bleed white background so the dashboard never peeks behind it. */
+  .gate-screen {
+    position: fixed; inset: 0; z-index: 9999;
+    background: var(--paper);
+    display: flex; align-items: center; justify-content: center;
+    padding: 24px;
+  }
+  .gate-card {
+    width: 100%; max-width: 460px;
+    background: var(--paper);
+    border: 1px solid var(--rule);
+    border-radius: 14px;
+    padding: 40px 36px;
+    box-shadow: 0 8px 32px rgba(24,24,27,0.06), 0 2px 6px rgba(24,24,27,0.04);
+  }
+  .gate-eyebrow {
+    font-family: var(--mono); font-size: 10px; font-weight: 500;
+    letter-spacing: 0.14em; text-transform: uppercase;
+    color: var(--mute);
+  }
+  .gate-title {
+    font-family: var(--display); font-size: 30px; font-weight: 700;
+    letter-spacing: -0.015em; color: var(--ink);
+    line-height: 1.05; margin: 8px 0 14px;
+  }
+  .gate-org-pill {
+    display: inline-flex; align-items: center; gap: 7px;
+    font-family: var(--sans); font-size: 13px; font-weight: 600;
+    color: var(--cobalt);
+    background: rgba(92,125,250,0.10);
+    border: 1px solid var(--cobalt-soft);
+    border-radius: 999px;
+    padding: 5px 12px;
+  }
+  .gate-org-pill::before {
+    content: ""; width: 7px; height: 7px; border-radius: 50%; background: var(--cobalt);
+  }
+  .gate-sub {
+    font-family: var(--sans); font-size: 14px; color: var(--ink-2);
+    margin: 18px 0 24px; line-height: 1.55;
+  }
+  .gate-label {
+    display: block;
+    font-family: var(--sans); font-size: 11.5px; font-weight: 600;
+    color: var(--ink-2); margin-bottom: 6px;
+    letter-spacing: 0;
+  }
+  .gate-input {
+    width: 100%; padding: 11px 13px;
+    background: var(--paper);
+    border: 1px solid var(--rule);
+    border-radius: 8px;
+    font-family: var(--sans); font-size: 14px; color: var(--ink);
+    transition: border-color 0.15s, box-shadow 0.15s;
+  }
+  .gate-input:focus {
+    outline: none; border-color: var(--cobalt);
+    box-shadow: 0 0 0 3px rgba(92,125,250,0.18);
+  }
+  .gate-error {
+    font-family: var(--sans); font-size: 12.5px; color: #b91c1c;
+    margin-top: 8px;
+  }
+  .gate-actions {
+    display: flex; gap: 14px; align-items: center;
+    margin-top: 20px;
+  }
+  .gate-actions .btn-primary {
+    flex: 0 0 auto;
+    padding: 10px 22px;
+    font-size: 12px;
+    border-radius: 8px;
+  }
+  .gate-link {
+    font-family: var(--sans); font-size: 12.5px; color: var(--mute);
+    text-decoration: none;
+    transition: color 0.12s;
+  }
+  .gate-link:hover { color: var(--cobalt); text-decoration: underline; }
 </style>
 
 <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
@@ -2059,27 +2142,55 @@ function RollupView({ teams }) {
 
 /* ========= App ========= */
 
-function App() {
-  // Password gate runs once on mount. If ?org=pico in URL, prompt for password.
-  // If accepted, enable save mode and seed the federation name from the gate.
-  const [orgMode, setOrgMode] = useState(null);   // null = public demo, else org key (e.g. "pico")
-  const [gateChecked, setGateChecked] = useState(false);
-
-  useEffect(() => {
-    const org = detectOrgMode();
-    if (!org) { setGateChecked(true); return; }
-    const expected = ORG_GATES[org].password;
-    const entered = window.prompt(`This is the ${ORG_GATES[org].name} entry. Enter password:`);
-    if (entered === expected) {
-      setOrgMode(org);
-      // Seed the federation field with the org's name so PICO doesn't have to retype.
-      setFed(prev => ({ ...prev, fedName: ORG_GATES[org].name }));
-    } else if (entered !== null) {
-      window.alert("Wrong password. Falling back to public demo.");
+function GateScreen({ orgKey, onAuth }) {
+  const [pw, setPw] = useState("");
+  const [error, setError] = useState("");
+  const submit = (e) => {
+    e.preventDefault();
+    if (pw === ORG_GATES[orgKey].password) {
+      onAuth(orgKey);
+    } else {
+      setError("Wrong password. Try again or use the public demo.");
+      setPw("");
     }
-    setGateChecked(true);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  };
+  return (
+    <div className="gate-screen">
+      <div className="gate-card">
+        <div className="gate-eyebrow">Team Effectiveness Instrument</div>
+        <div className="gate-title">Sign in</div>
+        <div className="gate-org-pill">{ORG_GATES[orgKey].name}</div>
+        <p className="gate-sub">
+          This is the private entry for {ORG_GATES[orgKey].name}. Submissions save to the Groundwork backend so they can be reviewed and analyzed over time. If you don't have the password, the public demo is open to anyone.
+        </p>
+        <form onSubmit={submit}>
+          <label htmlFor="gate-pw" className="gate-label">Password</label>
+          <input
+            id="gate-pw"
+            type="password"
+            className="gate-input"
+            value={pw}
+            onChange={e => { setPw(e.target.value); setError(""); }}
+            placeholder=""
+            autoFocus
+          />
+          {error && <div className="gate-error">{error}</div>}
+          <div className="gate-actions">
+            <button type="submit" className="btn btn-primary">Continue</button>
+            <a href="?" className="gate-link">Use public demo →</a>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+function App() {
+  // Detect ?org=pico (etc) once on first render. If present, show GateScreen
+  // until the password is correct. Until then, the dashboard is never rendered,
+  // so dummy data can never leak behind the gate.
+  const detectedOrg = useMemo(() => detectOrgMode(), []);
+  const [orgMode, setOrgMode] = useState(null);
 
   const [fed, setFed] = useState(SEED_FED);
   const [teams, setTeams] = useState(seedTeams());
@@ -2148,6 +2259,14 @@ function App() {
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
   };
+
+  // Gate first: if a private org was requested but not yet authed, show only the gate.
+  if (detectedOrg && !orgMode) {
+    return <GateScreen orgKey={detectedOrg} onAuth={(org) => {
+      setOrgMode(org);
+      setFed(prev => ({ ...prev, fedName: ORG_GATES[org].name }));
+    }} />;
+  }
 
   return (
     <div className="app">
