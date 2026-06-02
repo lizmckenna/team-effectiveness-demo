@@ -31,13 +31,15 @@
     --amber: #c99633;
     --slate: #475569;
     --teal: #0e8a78;
-    /* Linear-style health signals: brighter, white-bg legible */
-    --signal-green: #22c55e;
-    --signal-green-soft: #dcfce7;
-    --signal-yellow: #eab308;
-    --signal-yellow-soft: #fef3c7;
-    --signal-red: #ef4444;
-    --signal-red-soft: #fee2e2;
+    /* Growth-framed signals (purple = thriving, blue = developing, grey = opportunity for growth).
+       No green/yellow/red because "red team" carries social weight that distorts how organizers
+       respond to weak teams (struggling teams often need more attention, not less). */
+    --signal-green: #5c7dfa;            /* legacy var name, now brand purple */
+    --signal-green-soft: rgba(92,125,250,0.14);
+    --signal-yellow: #3b82f6;           /* legacy var name, now blue */
+    --signal-yellow-soft: rgba(59,130,246,0.12);
+    --signal-red: #71717a;              /* legacy var name, now neutral grey */
+    --signal-red-soft: rgba(113,113,122,0.14);
     --display: "Archivo Narrow", -apple-system, system-ui, sans-serif;
     --sans: "DM Sans", -apple-system, system-ui, sans-serif;
     --mono: "JetBrains Mono", ui-monospace, Menlo, monospace;
@@ -417,9 +419,9 @@
     min-width: 48px; text-align: center;
     border: 1px solid transparent;
   }
-  .health-index.green  { color: #15803d; background: var(--signal-green-soft);  border-color: rgba(34,197,94,0.35); }
-  .health-index.yellow { color: #a16207; background: var(--signal-yellow-soft); border-color: rgba(234,179,8,0.35); }
-  .health-index.red    { color: #b91c1c; background: var(--signal-red-soft);    border-color: rgba(239,68,68,0.35); }
+  .health-index.green  { color: #3e4f8e; background: var(--signal-green-soft);  border-color: rgba(92,125,250,0.40); }
+  .health-index.yellow { color: #1e3a8a; background: var(--signal-yellow-soft); border-color: rgba(59,130,246,0.40); }
+  .health-index.red    { color: #52525b; background: var(--signal-red-soft);    border-color: rgba(113,113,122,0.40); }
   .health-index-lbl {
     font-family: var(--sans); font-size: 11px; font-weight: 500;
     letter-spacing: 0; text-transform: none;
@@ -764,6 +766,53 @@
 <script type="text/babel">
 const { useState, useEffect, useRef, useMemo, useCallback } = React;
 
+/* ========= Supabase persistence + access gating =========
+   Public demo at /  → click around the dummy data, no save.
+   PICO entry at /?org=pico → password-gated, "Save snapshot" button writes to Supabase.
+   The anon key is safe to embed (Supabase's standard pattern); RLS restricts
+   what anonymous can do (INSERT-only on team_effectiveness_responses). */
+const SUPABASE_URL      = "https://jddrxzirkkmpsqqrmsea.supabase.co";
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpkZHJ4emlya2ttcHNxcXJtc2VhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMwMTY0MjQsImV4cCI6MjA4ODU5MjQyNH0.RBk3fRlL6thd7AT3YBdmxEXpmtb_KoY9hHAOPUWREME";
+
+// Light per-org access map. Add more orgs here as we onboard them. The password
+// is just a soft gate against random URL discovery; real protection is RLS server-side.
+const ORG_GATES = {
+  pico: { name: "PICO California", password: "picoca2026" },
+};
+
+function detectOrgMode() {
+  if (typeof window === "undefined") return null;
+  const params = new URLSearchParams(window.location.search);
+  const org = params.get("org");
+  return org && ORG_GATES[org] ? org : null;
+}
+
+async function saveResponseToSupabase({ snapshotDate, filledOutBy, orgName, payload }) {
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/team_effectiveness_responses`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "apikey": SUPABASE_ANON_KEY,
+      "Authorization": `Bearer ${SUPABASE_ANON_KEY}`,
+      // return=minimal: anon has no SELECT policy, so SELECT-after-INSERT would
+      // misleadingly look like an RLS rejection. (Lesson from power-mapping demo.)
+      "Prefer": "return=minimal",
+    },
+    body: JSON.stringify({
+      snapshot_date: snapshotDate,
+      filled_out_by: filledOutBy || null,
+      org_name: orgName || null,
+      source: "demo",
+      payload,
+    }),
+  });
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(`Supabase ${res.status}: ${text}`);
+  }
+  return null;
+}
+
 /* ========= Static config ========= */
 
 const CONSTITUENCY_TYPES = [
@@ -785,28 +834,41 @@ const PROVENANCE = {
   SELF: "self",
 };
 
-const RIGHT_PEOPLE_CHECKS = [
-  { key: "responsibility", short: "Take responsibility",       label: "Core leaders consistently take responsibility for the team's work." },
-  { key: "risk",           short: "Take risks",                label: "Core leaders take risks, try things that might fail." },
-  { key: "following",      short: "Develop a following",       label: "Each core leader has a base of leaders they're developing and leveraging." },
-  { key: "coown",          short: "Co-own the strategy",       label: "Core leaders co-own and co-create the strategy or campaign with their organizer." },
-  { key: "devtrack",       short: "On a development track",    label: "Each core leader has been assessed on the powerful-leader rubric and has a plan to move toward powerful." },
+// Core-leader practice items: 1-5 likert (was binary checks; "true for some, not others" was a real
+// pain point Lisa flagged). Each item is now a graded judgment.
+const RIGHT_PEOPLE_CORE_LIKERTS = [
+  { key: "responsibility", label: "Take responsibility",    help: "Core leaders consistently take responsibility for the team's work." },
+  { key: "risk",           label: "Take risks",             help: "Core leaders take risks, try things that might fail." },
+  { key: "following",      label: "Develop a following",    help: "Each core leader has a base of leaders they're developing and leveraging." },
+  { key: "coown",          label: "Co-own the strategy",    help: "Core leaders co-own and co-create the strategy or campaign with their organizer." },
 ];
 
+// "Leaders with agency" was jargony for Lisa — broken into two concrete prompts.
+// Belonging stays. The standalone agency instrument (in development with Miriam) will
+// eventually replace these with validated multi-item measures.
 const RIGHT_PEOPLE_LIKERTS = [
-  { key: "agency",    label: "Participants with agency",  help: "Members believe they can make change and feel confident making consequential decisions in the organization.", devNote: "Miriam / Liz agency instrument in development" },
-  { key: "belonging", label: "Belonging",                 help: "People feel like they belong; participating in organizing is an added value to their life." },
+  { key: "politicalChange",       label: "Belief in political change",
+    help: "Leaders believe they can make the political change they want to see." },
+  { key: "consequentialDecisions", label: "Consequential decisions in the org",
+    help: "Leaders feel like they can make consequential decisions in the organization." },
+  { key: "belonging",             label: "Belonging",
+    help: "People feel like they belong; participating in organizing is an added value to their life." },
 ];
 
 const REAL_TEAM_LIKERTS = [
   { key: "coAgendas",      label: "Co-owned agendas",       help: "Meeting agendas are co-owned, co-created and co-led by leaders, not just delivered by the organizer." },
   { key: "consequential",  label: "Consequential decisions", help: "The team is making consequential decisions about organizational and political strategy." },
+  { key: "accountableToConstituency", label: "Accountable to larger constituency",
+    help: "The team is accountable to and committed to organizing their larger constituency (larger congregation, spiritual community, institution, or community/neighborhood)." },
 ];
 
 const PURPOSE_LIKERTS = [
-  { key: "powerOrientation",   label: "Power orientation",       help: "The team understands how power moves and what role they can play. They're clear they need to be about power." },
-  { key: "missionClarity",     label: "Mission clarity",         help: "The team is clear about what they are organizing for and the steps needed to succeed; clear on the political context." },
-  { key: "strategyPlace",      label: "Place in overarching strategy", help: "The team sees its work as part of the federation's overall strategy; members feel organizational agency and can impact federation decisions." },
+  { key: "powerOrientation",   label: "Power orientation",
+    help: "The team understands how public power moves and that their primary purpose is to organize for power." },
+  { key: "missionClarity",     label: "Mission clarity",
+    help: "The team is clear about what they are organizing for and the steps needed to succeed; clear on the political context." },
+  { key: "strategyPlace",      label: "Place in overarching strategy",
+    help: "The team sees its work as part of the federation's overall strategy; members feel organizational agency and can impact federation decisions." },
 ];
 
 /* Quadrant strategy labels, adapted from Cushman/Hackman framing */
@@ -836,7 +898,10 @@ const SEED_FED = {
 };
 
 /* Seed teams spread across all four effectiveness quadrants AND across
-   California so the Geo tab is meaningful out of the gate. */
+   California so the Geo tab is meaningful out of the gate. All "right-people"
+   items are now 1-5 likerts (Lisa's note: "what about true for some, not
+   others?"), and the rubric placements / meeting-day / meeting-time fields
+   are gone per her round of feedback. */
 const seedTeams = () => ([
   {
     /* Upper-right · Effective, high RP + RT + CP */
@@ -847,13 +912,12 @@ const seedTeams = () => ([
     organizer: "Devon Mills",
     monthsActive: 24,
     coreLeaders: 5, members: 18, activeVolunteers: 34,
-    rubricDeveloping: 2, rubricAccelerating: 2, rubricPowerful: 2,
-    responsibility: true, risk: true, following: true, coown: true, devtrack: true,
-    agency: 5, belonging: 5,
+    responsibility: 5, risk: 5, following: 5, coown: 5,
+    politicalChange: 5, consequentialDecisions: 5, belonging: 5,
     boundedMembership: true,
-    meetsMonthly: true, meetingDay: "1st Wednesday", meetingTime: "7:00pm",
+    meetsMonthly: true,
     stableFullCycle: true, attendancePct: 88,
-    coAgendas: 5, consequential: 5,
+    coAgendas: 5, consequential: 5, accountableToConstituency: 5,
     powerOrientation: 5, missionClarity: 5, strategyPlace: 5,
     mediumTermPlan: true, planBrief: "Just-cause eviction ordinance, council vote Aug",
     powerPlay: true, powerPlayBrief: "May rally + commitment cards from 3 council members",
@@ -870,13 +934,12 @@ const seedTeams = () => ([
     organizer: "Marisol Vega",
     monthsActive: 20,
     coreLeaders: 4, members: 14, activeVolunteers: 28,
-    rubricDeveloping: 1, rubricAccelerating: 2, rubricPowerful: 1,
-    responsibility: true, risk: true, following: true, coown: true, devtrack: true,
-    agency: 4, belonging: 5,
+    responsibility: 5, risk: 4, following: 5, coown: 5,
+    politicalChange: 4, consequentialDecisions: 5, belonging: 5,
     boundedMembership: true,
-    meetsMonthly: true, meetingDay: "3rd Tuesday", meetingTime: "6:30pm",
+    meetsMonthly: true,
     stableFullCycle: true, attendancePct: 82,
-    coAgendas: 4, consequential: 4,
+    coAgendas: 4, consequential: 4, accountableToConstituency: 5,
     powerOrientation: 4, missionClarity: 4, strategyPlace: 5,
     mediumTermPlan: true, planBrief: "Education equity, state budget May vote",
     powerPlay: true, powerPlayBrief: "Sacramento delegation meeting w/ assembly leadership",
@@ -893,13 +956,12 @@ const seedTeams = () => ([
     organizer: "Anita Reyes",
     monthsActive: 14,
     coreLeaders: 1, members: 16, activeVolunteers: 22,
-    rubricDeveloping: 6, rubricAccelerating: 0, rubricPowerful: 0,
-    responsibility: false, risk: false, following: false, coown: false, devtrack: true,
-    agency: 3, belonging: 4,
+    responsibility: 2, risk: 2, following: 2, coown: 2,
+    politicalChange: 3, consequentialDecisions: 3, belonging: 4,
     boundedMembership: true,
-    meetsMonthly: true, meetingDay: "2nd Saturday", meetingTime: "10:00am",
+    meetsMonthly: true,
     stableFullCycle: true, attendancePct: 70,
-    coAgendas: 2, consequential: 3,
+    coAgendas: 2, consequential: 3, accountableToConstituency: 3,
     powerOrientation: 4, missionClarity: 5, strategyPlace: 4,
     mediumTermPlan: true, planBrief: "LAUSD facilities equity, fall school board push",
     powerPlay: true, powerPlayBrief: "Targeted board member 1:1s + mass meeting",
@@ -916,13 +978,12 @@ const seedTeams = () => ([
     organizer: "Marisol Vega",
     monthsActive: 10,
     coreLeaders: 2, members: 13, activeVolunteers: 18,
-    rubricDeveloping: 4, rubricAccelerating: 1, rubricPowerful: 0,
-    responsibility: true, risk: false, following: false, coown: false, devtrack: true,
-    agency: 3, belonging: 4,
+    responsibility: 4, risk: 2, following: 2, coown: 2,
+    politicalChange: 3, consequentialDecisions: 3, belonging: 4,
     boundedMembership: true,
-    meetsMonthly: true, meetingDay: "2nd Sunday", meetingTime: "4:00pm",
+    meetsMonthly: true,
     stableFullCycle: false, attendancePct: 72,
-    coAgendas: 2, consequential: 3,
+    coAgendas: 2, consequential: 3, accountableToConstituency: 3,
     powerOrientation: 4, missionClarity: 4, strategyPlace: 4,
     mediumTermPlan: true, planBrief: "Wage-theft ordinance, fall supervisors push",
     powerPlay: false, powerPlayBrief: "",
@@ -939,13 +1000,12 @@ const seedTeams = () => ([
     organizer: "James Okafor",
     monthsActive: 16,
     coreLeaders: 4, members: 11, activeVolunteers: 26,
-    rubricDeveloping: 2, rubricAccelerating: 2, rubricPowerful: 0,
-    responsibility: true, risk: true, following: true, coown: true, devtrack: true,
-    agency: 4, belonging: 4,
+    responsibility: 4, risk: 4, following: 4, coown: 4,
+    politicalChange: 4, consequentialDecisions: 4, belonging: 4,
     boundedMembership: true,
-    meetsMonthly: true, meetingDay: "Last Thursday", meetingTime: "7:30pm",
+    meetsMonthly: true,
     stableFullCycle: true, attendancePct: 78,
-    coAgendas: 4, consequential: 3,
+    coAgendas: 4, consequential: 3, accountableToConstituency: 3,
     powerOrientation: 2, missionClarity: 2, strategyPlace: 2,
     mediumTermPlan: false, planBrief: "",
     powerPlay: false, powerPlayBrief: "",
@@ -962,13 +1022,12 @@ const seedTeams = () => ([
     organizer: "Anita Reyes",
     monthsActive: 5,
     coreLeaders: 1, members: 5, activeVolunteers: 9,
-    rubricDeveloping: 4, rubricAccelerating: 0, rubricPowerful: 0,
-    responsibility: false, risk: false, following: false, coown: false, devtrack: false,
-    agency: 2, belonging: 3,
+    responsibility: 1, risk: 1, following: 1, coown: 1,
+    politicalChange: 2, consequentialDecisions: 2, belonging: 3,
     boundedMembership: false,
-    meetsMonthly: false, meetingDay: "", meetingTime: "",
+    meetsMonthly: false,
     stableFullCycle: false, attendancePct: 35,
-    coAgendas: 1, consequential: 1,
+    coAgendas: 1, consequential: 1, accountableToConstituency: 1,
     powerOrientation: 1, missionClarity: 1, strategyPlace: 2,
     mediumTermPlan: false, planBrief: "",
     powerPlay: false, powerPlayBrief: "",
@@ -985,32 +1044,37 @@ const seedTeams = () => ([
 function scoreRightPeople(t) {
   /* CRM facts */
   const coreLeaderScore = Math.min(t.coreLeaders / 5, 1) * 30; // 5+ core leaders = full
-  const totalRubric = t.rubricDeveloping + t.rubricAccelerating + t.rubricPowerful;
-  const rubricScore = totalRubric === 0 ? 0
-    : ((t.rubricAccelerating * 0.6 + t.rubricPowerful * 1.0 + t.rubricDeveloping * 0.3) / totalRubric) * 20;
-  /* Self-report */
-  const checks = RIGHT_PEOPLE_CHECKS.reduce((s, c) => s + (t[c.key] ? 1 : 0), 0);
-  const checksScore = (checks / RIGHT_PEOPLE_CHECKS.length) * 30;
-  const likertScore =
-    (((t.agency || 1) - 1) / 4) * 10 +
-    (((t.belonging || 1) - 1) / 4) * 10;
-  return Math.round(coreLeaderScore + rubricScore + checksScore + likertScore);
+
+  /* Core-leader practice (was a check-list, now 1-5 likerts). Average across
+     items, normalize to 0-1, scale to 40 points. */
+  const corePracticeAvg = RIGHT_PEOPLE_CORE_LIKERTS.length === 0 ? 0
+    : RIGHT_PEOPLE_CORE_LIKERTS.reduce((s, c) => s + ((t[c.key] || 1) - 1) / 4, 0) / RIGHT_PEOPLE_CORE_LIKERTS.length;
+  const corePracticeScore = corePracticeAvg * 40;
+
+  /* Three likerts: political-change + consequential-decisions + belonging.
+     Average across them, scale to 30. */
+  const likertAvg = RIGHT_PEOPLE_LIKERTS.length === 0 ? 0
+    : RIGHT_PEOPLE_LIKERTS.reduce((s, l) => s + ((t[l.key] || 1) - 1) / 4, 0) / RIGHT_PEOPLE_LIKERTS.length;
+  const likertScore = likertAvg * 30;
+
+  return Math.round(coreLeaderScore + corePracticeScore + likertScore);
 }
 
 function scoreRealTeam(t) {
   /* CRM facts */
-  const bounded = t.boundedMembership ? 15 : 0;
-  const monthly = t.meetsMonthly ? 15 : 0;
-  const stable  = t.stableFullCycle ? 15 : 0;
-  /* Obama-derived 75% attendance bar */
-  const att = t.attendancePct >= 75 ? 25
-            : t.attendancePct >= 60 ? 15
-            : t.attendancePct >= 40 ? 7
+  const bounded = t.boundedMembership ? 12 : 0;
+  const monthly = t.meetsMonthly ? 12 : 0;
+  const stable  = t.stableFullCycle ? 12 : 0;
+  /* "% of folks who attended more than 50% of events" (Obama-derived 75% bar) */
+  const att = t.attendancePct >= 75 ? 20
+            : t.attendancePct >= 60 ? 12
+            : t.attendancePct >= 40 ? 6
             : 0;
-  /* Self-report */
-  const coAg = (((t.coAgendas || 1) - 1) / 4) * 15;
-  const cons = (((t.consequential || 1) - 1) / 4) * 15;
-  return Math.round(bounded + monthly + stable + att + coAg + cons);
+  /* Self-report likerts: co-owned agendas + consequential decisions + accountable to constituency */
+  const realTeamLikertAvg = REAL_TEAM_LIKERTS.length === 0 ? 0
+    : REAL_TEAM_LIKERTS.reduce((s, l) => s + ((t[l.key] || 1) - 1) / 4, 0) / REAL_TEAM_LIKERTS.length;
+  const realTeamLikertScore = realTeamLikertAvg * 44;  // takes up the remaining share
+  return Math.round(bounded + monthly + stable + att + realTeamLikertScore);
 }
 
 function scorePurpose(t) {
@@ -1176,14 +1240,15 @@ function TeamForm({ initial, onCommit, onCancel, crmConnected }) {
     name: "", constituencyType: "congregation", constituencyDetail: "",
     organizer: "", monthsActive: 0,
     coreLeaders: 0, members: 0, activeVolunteers: 0,
-    rubricDeveloping: 0, rubricAccelerating: 0, rubricPowerful: 0,
-    responsibility: false, risk: false, following: false, coown: false, devtrack: false,
-    agency: 3, belonging: 3,
+    // Core-leader practice: now 1-5 likerts, default 3 (middle)
+    responsibility: 3, risk: 3, following: 3, coown: 3,
+    // Right-people likerts (replaced "agency" with the two concrete prompts Lisa wanted)
+    politicalChange: 3, consequentialDecisions: 3, belonging: 3,
     boundedMembership: false,
-    meetsMonthly: false, meetingDay: "", meetingTime: "",
+    meetsMonthly: false,
     stableFullCycle: false,
     attendancePct: 0,
-    coAgendas: 3, consequential: 3,
+    coAgendas: 3, consequential: 3, accountableToConstituency: 3,
     powerOrientation: 3, missionClarity: 3, strategyPlace: 3,
     mediumTermPlan: false, planBrief: "",
     powerPlay: false, powerPlayBrief: "",
@@ -1296,33 +1361,21 @@ function TeamForm({ initial, onCommit, onCancel, crmConnected }) {
           </div>
         </div>
 
-        <div className="field">
-          <FieldLabel prov={PROVENANCE.CRM}>Leader-rubric placements (counts)</FieldLabel>
-          <div className="field-row-3">
-            <div className="field" style={{margin: 0}}>
-              <label style={{fontSize: 8.5, color: "var(--mute)"}}><span className="lbl-text">Developing</span></label>
-              <input type="number" min="0" className={crmClass(draft.rubricDeveloping)}
-                     value={draft.rubricDeveloping}
-                     onChange={e => setNum("rubricDeveloping", e.target.value)} />
-            </div>
-            <div className="field" style={{margin: 0}}>
-              <label style={{fontSize: 8.5, color: "var(--mute)"}}><span className="lbl-text">Accelerating</span></label>
-              <input type="number" min="0" className={crmClass(draft.rubricAccelerating)}
-                     value={draft.rubricAccelerating}
-                     onChange={e => setNum("rubricAccelerating", e.target.value)} />
-            </div>
-            <div className="field" style={{margin: 0}}>
-              <label style={{fontSize: 8.5, color: "var(--mute)"}}><span className="lbl-text">Powerful</span></label>
-              <input type="number" min="0" className={crmClass(draft.rubricPowerful)}
-                     value={draft.rubricPowerful}
-                     onChange={e => setNum("rubricPowerful", e.target.value)} />
-            </div>
-          </div>
-        </div>
+        {/* Leader-rubric placements removed per Lisa's feedback — the powerful-leader rubric language is
+            still rolling out across the federations and takes time to onboard folks into. Bring back when ready. */}
 
         <div className="field">
-          <FieldLabel prov={PROVENANCE.SELF}>Core-leader practice, check what's true</FieldLabel>
-          <CheckList items={RIGHT_PEOPLE_CHECKS} values={draft} onToggle={toggle} />
+          <FieldLabel prov={PROVENANCE.SELF}>Core-leader practice (rate each 1-5)</FieldLabel>
+          <p className="note-line" style={{marginTop: 0, marginBottom: 8}}>
+            Each item is a 1-5 likert (was a binary checklist; "true for some, not others" was the gap).
+          </p>
+          {RIGHT_PEOPLE_CORE_LIKERTS.map(l => (
+            <div className="field" key={l.key} style={{marginBottom: 10}}>
+              <FieldLabel prov={PROVENANCE.SELF}>{l.label}</FieldLabel>
+              <p className="note-line" style={{marginTop: 0, marginBottom: 6}}>{l.help}</p>
+              <Likert value={draft[l.key]} onChange={v => set(l.key, v)} />
+            </div>
+          ))}
         </div>
 
         {RIGHT_PEOPLE_LIKERTS.map(l => (
@@ -1350,22 +1403,8 @@ function TeamForm({ initial, onCommit, onCancel, crmConnected }) {
           <YesNo value={draft.meetsMonthly} onChange={v => set("meetsMonthly", v)} />
         </div>
 
-        {draft.meetsMonthly && (
-          <div className="field-row">
-            <div className="field">
-              <FieldLabel prov={PROVENANCE.CRM}>Regular day</FieldLabel>
-              <input className={crmClass(draft.meetingDay)} value={draft.meetingDay}
-                     onChange={e => set("meetingDay", e.target.value)}
-                     placeholder="e.g., 3rd Tuesday" />
-            </div>
-            <div className="field">
-              <FieldLabel prov={PROVENANCE.CRM}>Time</FieldLabel>
-              <input className={crmClass(draft.meetingTime)} value={draft.meetingTime}
-                     onChange={e => set("meetingTime", e.target.value)}
-                     placeholder="e.g., 6:30pm" />
-            </div>
-          </div>
-        )}
+        {/* Regular meeting day + time removed per Lisa's feedback — not consistently tracked
+            and nobody is really looking at it. */}
 
         <div className="field">
           <FieldLabel prov={PROVENANCE.CRM}>Stable through ≥ 1 full organizing cycle</FieldLabel>
@@ -1373,7 +1412,7 @@ function TeamForm({ initial, onCommit, onCancel, crmConnected }) {
         </div>
 
         <div className="field">
-          <FieldLabel prov={PROVENANCE.CRM}>Attendance consistency (% of last 6 meetings)</FieldLabel>
+          <FieldLabel prov={PROVENANCE.CRM}>Attendance consistency (% of members who attended more than 50% of meetings)</FieldLabel>
           <input type="number" min="0" max="100" className={crmClass(draft.attendancePct)}
                  value={draft.attendancePct}
                  onChange={e => setNum("attendancePct", e.target.value)} />
@@ -1586,7 +1625,6 @@ function tagsForTeam(team) {
   if (!team.mediumTermPlan) out.push({ kind: "flag", text: "No 3–6 mo plan" });
   if (!team.powerPlay) out.push({ kind: "flag", text: "No power play" });
   if (team.fedRepresented) out.push({ kind: "ok", text: "Fed-represented" });
-  if (team.rubricPowerful >= 1) out.push({ kind: "ok", text: team.rubricPowerful + " powerful leaders" });
   return out;
 }
 
@@ -2022,12 +2060,38 @@ function RollupView({ teams }) {
 /* ========= App ========= */
 
 function App() {
+  // Password gate runs once on mount. If ?org=pico in URL, prompt for password.
+  // If accepted, enable save mode and seed the federation name from the gate.
+  const [orgMode, setOrgMode] = useState(null);   // null = public demo, else org key (e.g. "pico")
+  const [gateChecked, setGateChecked] = useState(false);
+
+  useEffect(() => {
+    const org = detectOrgMode();
+    if (!org) { setGateChecked(true); return; }
+    const expected = ORG_GATES[org].password;
+    const entered = window.prompt(`This is the ${ORG_GATES[org].name} entry. Enter password:`);
+    if (entered === expected) {
+      setOrgMode(org);
+      // Seed the federation field with the org's name so PICO doesn't have to retype.
+      setFed(prev => ({ ...prev, fedName: ORG_GATES[org].name }));
+    } else if (entered !== null) {
+      window.alert("Wrong password. Falling back to public demo.");
+    }
+    setGateChecked(true);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const [fed, setFed] = useState(SEED_FED);
   const [teams, setTeams] = useState(seedTeams());
   /* Only one section open at a time, so the list is always reachable */
   const [openSection, setOpenSection] = useState("list"); // "fed" | "add" | "list"
   const [view, setView] = useState("scorecard");
   const toggleSection = (key) => setOpenSection(s => s === key ? "list" : key);
+
+  // Save-to-Supabase state
+  const [saveState, setSaveState] = useState("idle"); // idle | saving | saved | error
+  const [saveMsg, setSaveMsg] = useState("");
+  const today = new Date().toISOString().slice(0, 10);
 
   const addTeam = useCallback((draft) => {
     setTeams(prev => [...prev, { ...draft, id: "t" + Date.now() + Math.floor(Math.random()*1000) }]);
@@ -2047,6 +2111,29 @@ function App() {
   const goHome = () => {
     setOpenSection("list");
     setView("scorecard");
+  };
+
+  const saveSnapshot = async () => {
+    if (!teams.length) {
+      setSaveState("error");
+      setSaveMsg("Add at least one team before saving.");
+      return;
+    }
+    setSaveState("saving"); setSaveMsg("");
+    try {
+      await saveResponseToSupabase({
+        snapshotDate: fed.date || today,
+        filledOutBy: fed.scorer,
+        orgName: fed.fedName,
+        payload: { fed, teams, exportedAt: new Date().toISOString() },
+      });
+      setSaveState("saved");
+      setSaveMsg("Saved.");
+      setTimeout(() => setSaveState("idle"), 3500);
+    } catch (e) {
+      setSaveState("error");
+      setSaveMsg(e.message || "Save failed.");
+    }
   };
 
   const exportJSON = () => {
@@ -2080,8 +2167,34 @@ function App() {
                    style={{accentColor: "var(--cobalt)"}} />
             CRM connected
           </label>
-          <span className="badge">Demo · data not saved</span>
-          <div className="top-actions">
+          {orgMode ? (
+            <span className="badge" style={{background:"rgba(92,125,250,0.12)", color:"var(--cobalt)", border:"1px solid var(--cobalt-soft)"}}>
+              {ORG_GATES[orgMode].name} · saves to Groundwork
+            </span>
+          ) : (
+            <span className="badge">Demo · data not saved</span>
+          )}
+          <div className="top-actions" style={{alignItems:"center"}}>
+            {orgMode && saveState === "saved" && (
+              <span style={{fontFamily:"var(--sans)", fontSize:11.5, color:"#15803d", padding:"4px 10px", background:"#dcfce7", border:"1px solid rgba(34,197,94,0.35)", borderRadius:6}}>
+                ✓ {saveMsg}
+              </span>
+            )}
+            {orgMode && saveState === "error" && (
+              <span style={{fontFamily:"var(--sans)", fontSize:11.5, color:"#b91c1c", padding:"4px 10px", background:"#fee2e2", border:"1px solid rgba(239,68,68,0.35)", borderRadius:6, maxWidth:280, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap"}} title={saveMsg}>
+                {saveMsg}
+              </span>
+            )}
+            {orgMode && (
+              <button
+                className="btn btn-primary"
+                onClick={saveSnapshot}
+                disabled={saveState === "saving"}
+                title="Save this snapshot to the Groundwork backend"
+              >
+                {saveState === "saving" ? "Saving…" : "Save snapshot"}
+              </button>
+            )}
             <button className="btn btn-ghost" onClick={exportJSON}>Export JSON</button>
             <button className="btn btn-ghost" onClick={reset}>Reset</button>
           </div>
@@ -2115,7 +2228,7 @@ function App() {
                     <input value={fed.scorer} onChange={e => setFed({...fed, scorer: e.target.value})} placeholder="Whose judgment is this?" />
                   </div>
                 </div>
-                <p className="note-line">When the federation's CRM is connected, fields tagged <CrmBadge /> draw directly from the org's records, counts, meeting cadence, attendance, rubric placements. The organizer doesn't grade themselves on countable facts. Everything else is coach / organizer judgment.</p>
+                <p className="note-line">When the CRM is connected, fields tagged <CrmBadge /> draw directly from the org's records (counts, meeting cadence, attendance). The organizer doesn't grade themselves on countable facts. Everything else is coach / organizer judgment.</p>
               </div>
             )}
           </section>
