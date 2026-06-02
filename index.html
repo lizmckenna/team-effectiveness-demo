@@ -2188,12 +2188,20 @@ function GateScreen({ orgKey, onAuth }) {
 function App() {
   // Detect ?org=pico (etc) once on first render. If present, show GateScreen
   // until the password is correct. Until then, the dashboard is never rendered,
-  // so dummy data can never leak behind the gate.
+  // so dummy data can never leak behind the gate. Org mode also starts with
+  // empty state (no seed teams) since this is a real entry, not a demo.
   const detectedOrg = useMemo(() => detectOrgMode(), []);
   const [orgMode, setOrgMode] = useState(null);
+  const today = new Date().toISOString().slice(0, 10);
+  const orgInitialFed = (org) => ({
+    fedName: ORG_GATES[org].name,
+    date: today,
+    scorer: "",
+    crmConnected: false,
+  });
 
-  const [fed, setFed] = useState(SEED_FED);
-  const [teams, setTeams] = useState(seedTeams());
+  const [fed, setFed] = useState(detectedOrg ? orgInitialFed(detectedOrg) : SEED_FED);
+  const [teams, setTeams] = useState(detectedOrg ? [] : seedTeams());
   /* Only one section open at a time, so the list is always reachable */
   const [openSection, setOpenSection] = useState("list"); // "fed" | "add" | "list"
   const [view, setView] = useState("scorecard");
@@ -2202,7 +2210,6 @@ function App() {
   // Save-to-Supabase state
   const [saveState, setSaveState] = useState("idle"); // idle | saving | saved | error
   const [saveMsg, setSaveMsg] = useState("");
-  const today = new Date().toISOString().slice(0, 10);
 
   const addTeam = useCallback((draft) => {
     setTeams(prev => [...prev, { ...draft, id: "t" + Date.now() + Math.floor(Math.random()*1000) }]);
@@ -2215,8 +2222,11 @@ function App() {
   }, []);
 
   const reset = () => {
-    setFed(SEED_FED);
-    setTeams(seedTeams());
+    // In org mode, reset to a clean PICO entry (no dummy teams).
+    // In public-demo mode, reset back to the seed data so people can poke around.
+    setFed(orgMode ? orgInitialFed(orgMode) : SEED_FED);
+    setTeams(orgMode ? [] : seedTeams());
+    setOpenSection(orgMode ? "add" : "list");
   };
 
   const goHome = () => {
@@ -2264,7 +2274,9 @@ function App() {
   if (detectedOrg && !orgMode) {
     return <GateScreen orgKey={detectedOrg} onAuth={(org) => {
       setOrgMode(org);
-      setFed(prev => ({ ...prev, fedName: ORG_GATES[org].name }));
+      // Land directly on "Add a team" so Lisa's first action is to enter a real team,
+      // not click around the (now empty) scorecard.
+      setOpenSection("add");
     }} />;
   }
 
