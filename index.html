@@ -1798,7 +1798,9 @@ function EffectivenessGrid({ teams, onUpdateTeam }) {
   }, []);
 
   const side = Math.min(size.w, size.h);
-  const cx = side / 2, cy = side / 2, half = side / 2 - 80;
+  // Bumped margin from 80 to 110 so the quadrant pills can sit OUTSIDE the plot
+  // (in the white margin space) instead of overlapping team dots.
+  const cx = side / 2, cy = side / 2, half = side / 2 - 110;
   const xFor = (v) => cx + v * half;
   const yFor = (v) => cy - v * half;
 
@@ -1887,35 +1889,51 @@ function EffectivenessGrid({ teams, onUpdateTeam }) {
           );
         })}
 
-        {/* Quadrant strategy pills — rendered LAST so they sit above team dots, never overlapped */}
-        {quadCoords.map((q, i) => {
-          const text = q.strategy;
-          const num = q.num;
+        {/* Quadrant strategy pills — pinned to the SVG margin OUTSIDE the plot so they
+            never overlap team dots. Top pills above the top axis label, bottom pills below
+            the bottom axis label. Each pill is corner-anchored to the plot edge on its side. */}
+        {(() => {
+          const plotTop    = cy - half;
+          const plotBottom = cy + half;
+          const plotLeft   = cx - half;
+          const plotRight  = cx + half;
+          // Top axis label sits at plotTop-22; pills go further out above it.
+          const topY    = plotTop - 50;
+          // Bottom axis label sits at plotBottom+32; pills go further out below it.
+          const bottomY = plotBottom + 60;
+          const corners = [
+            { num: "1", strategy: "Effective",                  sx: plotRight, sy: topY,    anchor: "end"   },
+            { num: "2", strategy: "Develop core leaders",       sx: plotLeft,  sy: topY,    anchor: "start" },
+            { num: "3", strategy: "Coach into strategy",        sx: plotRight, sy: bottomY, anchor: "end"   },
+            { num: "4", strategy: "Restart / rebuild",          sx: plotLeft,  sy: bottomY, anchor: "start" },
+          ];
           const padX = 10, gap = 6, numW = 12, charW = 6.5;
-          const w = numW + gap + text.length * charW + padX * 2;
           const h = 26;
-          const rx = q.anchor === "end" ? q.sx - w : q.sx;
-          const ry = q.sy - h / 2;
-          return (
-            <g key={"quad" + i}>
-              <rect x={rx} y={ry} width={w} height={h} rx="13" ry="13"
-                    fill="rgba(255,255,255,0.97)" stroke="var(--rule)" strokeWidth="1"
-                    style={{filter: "drop-shadow(0 1px 2px rgba(0,0,0,0.06))"}} />
-              <text x={rx + padX} y={q.sy + 1}
-                    dominantBaseline="middle" textAnchor="start"
-                    fontFamily="var(--mono)" fontSize="10" fontWeight="600"
-                    fill="var(--cobalt)" letterSpacing="0.04em">
-                {num}
-              </text>
-              <text x={rx + padX + numW + gap} y={q.sy + 1}
-                    dominantBaseline="middle" textAnchor="start"
-                    fontFamily="var(--sans)" fontSize="11.5" fontWeight="500"
-                    fill="var(--ink-2)">
-                {text}
-              </text>
-            </g>
-          );
-        })}
+          return corners.map((q, i) => {
+            const w = numW + gap + q.strategy.length * charW + padX * 2;
+            const rx = q.anchor === "end" ? q.sx - w : q.sx;
+            const ry = q.sy - h / 2;
+            return (
+              <g key={"quad" + i}>
+                <rect x={rx} y={ry} width={w} height={h} rx="13" ry="13"
+                      fill="rgba(255,255,255,0.97)" stroke="var(--rule)" strokeWidth="1"
+                      style={{filter: "drop-shadow(0 1px 2px rgba(0,0,0,0.06))"}} />
+                <text x={rx + padX} y={q.sy + 1}
+                      dominantBaseline="middle" textAnchor="start"
+                      fontFamily="var(--mono)" fontSize="10" fontWeight="600"
+                      fill="var(--cobalt)" letterSpacing="0.04em">
+                  {q.num}
+                </text>
+                <text x={rx + padX + numW + gap} y={q.sy + 1}
+                      dominantBaseline="middle" textAnchor="start"
+                      fontFamily="var(--sans)" fontSize="11.5" fontWeight="500"
+                      fill="var(--ink-2)">
+                  {q.strategy}
+                </text>
+              </g>
+            );
+          });
+        })()}
       </svg>
 
       <div className="grid-legend-bar">
