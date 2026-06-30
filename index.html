@@ -877,8 +877,6 @@ async function saveResponseToSupabase({ snapshotDate, filledOutBy, orgName, payl
       "Content-Type": "application/json",
       "apikey": SUPABASE_ANON_KEY,
       "Authorization": `Bearer ${SUPABASE_ANON_KEY}`,
-      // return=minimal: anon has no SELECT policy, so SELECT-after-INSERT would
-      // misleadingly look like an RLS rejection. (Lesson from power-mapping demo.)
       "Prefer": "return=minimal",
     },
     body: JSON.stringify({
@@ -894,6 +892,32 @@ async function saveResponseToSupabase({ snapshotDate, filledOutBy, orgName, payl
     throw new Error(`Supabase ${res.status}: ${text}`);
   }
   return null;
+}
+
+// Fetch the most recent snapshot for this org so a user resuming on a different
+// device/browser picks up where they left off. Requires anon SELECT policy on
+// team_effectiveness_responses. If anon SELECT isn't enabled yet, this returns
+// null and the page falls back to localStorage / empty state.
+async function loadLatestSnapshotFromSupabase(orgName) {
+  if (!orgName) return null;
+  try {
+    const url = `${SUPABASE_URL}/rest/v1/team_effectiveness_responses`
+      + `?org_name=eq.${encodeURIComponent(orgName)}`
+      + `&select=payload,created_at`
+      + `&order=created_at.desc&limit=1`;
+    const res = await fetch(url, {
+      headers: {
+        apikey: SUPABASE_ANON_KEY,
+        Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+      },
+    });
+    if (!res.ok) return null;
+    const rows = await res.json();
+    if (!Array.isArray(rows) || rows.length === 0) return null;
+    return rows[0]; // { payload, created_at }
+  } catch (e) {
+    return null;
+  }
 }
 
 /* ========= Static config ========= */
@@ -2229,38 +2253,61 @@ function App() {
   const [saveState, setSaveState] = useState("idle"); // idle | saving | saved | error
   const [saveMsg, setSaveMsg] = useState("");
 
-  /* ===== Local persistence (per org, per browser) =====
-     Save Snapshot writes to Supabase as the canonical archive. localStorage
-     keeps the user's in-progress entry so closing/reopening the tab doesn't
-     wipe it (Lisa hit this — she filled in PICO data, saved, closed, came
-     back to a blank form). Keyed by org so different orgs on the same browser
-     don't collide. */
+  /* ===== Persistence =====
+     Primary: Supabase. On auth we fetch the latest snapshot for this org
+     and load it (so the user can resume on any browser/device).
+     Fallback: localStorage. Used if Supabase is unreachable or if anon
+     SELECT isn't enabled yet. Keyed by org so different orgs on the same
+     browser don't collide. */
   const storageKey = orgMode ? `te-demo-state-${orgMode}` : null;
-
-  // Hydrate from localStorage once orgMode is known
+  const [hydrating, setHydrating] = useState(false);
+  const [hydrateSource, setHydrateSource] = useState(null); // "server" | "local" | "none"
   const hydratedRef = useRef(false);
+
   useEffect(() => {
     if (!orgMode || hydratedRef.current) return;
-    try {
-      const raw = window.localStorage.getItem(storageKey);
-      if (raw) {
-        const data = JSON.parse(raw);
-        if (data && typeof data === "object") {
-          if (data.fed) setFed(data.fed);
-          if (Array.isArray(data.teams)) setTeams(data.teams);
-        }
-      }
-    } catch (e) { /* ignore parse / quota errors */ }
     hydratedRef.current = true;
+    setHydrating(true);
+    (async () => {
+      // 1. Try server first
+      const orgName = ORG_GATES[orgMode]?.name;
+      const row = await loadLatestSnapshotFromSupabase(orgName);
+      if (row && row.payload && typeof row.payload === "object") {
+        const p = row.payload;
+        if (p.fed) setFed(p.fed);
+        if (Array.isArray(p.teams)) setTeams(p.teams);
+        setHydrateSource("server");
+        setHydrating(false);
+        return;
+      }
+      // 2. Fall back to local cache
+      try {
+        const raw = window.localStorage.getItem(storageKey);
+        if (raw) {
+          const data = JSON.parse(raw);
+          if (data && typeof data === "object") {
+            if (data.fed) setFed(data.fed);
+            if (Array.isArray(data.teams)) setTeams(data.teams);
+            setHydrateSource("local");
+            setHydrating(false);
+            return;
+          }
+        }
+      } catch (e) { /* ignore */ }
+      setHydrateSource("none");
+      setHydrating(false);
+    })();
   }, [orgMode, storageKey]);
 
-  // Persist on every change once hydrated
+  // Mirror state to localStorage as a network-fallback cache. Source of truth
+  // is Supabase (written by Save Snapshot); localStorage just catches the
+  // case where the user closes the tab between snapshots, or works offline.
   useEffect(() => {
-    if (!orgMode || !hydratedRef.current) return;
+    if (!orgMode || hydrating) return;
     try {
       window.localStorage.setItem(storageKey, JSON.stringify({ fed, teams }));
     } catch (e) { /* quota or private-mode failure — silent */ }
-  }, [orgMode, storageKey, fed, teams]);
+  }, [orgMode, storageKey, fed, teams, hydrating]);
 
   const addTeam = useCallback((draft) => {
     setTeams(prev => [...prev, { ...draft, id: "t" + Date.now() + Math.floor(Math.random()*1000) }]);
