@@ -944,21 +944,20 @@ const PROVENANCE = {
 // Core-leader practice items: 1-5 likert (was binary checks; "true for some, not others" was a real
 // pain point Lisa flagged). Each item is now a graded judgment.
 const RIGHT_PEOPLE_CORE_LIKERTS = [
-  { key: "responsibility", label: "Take responsibility",    help: "Core leaders consistently take responsibility for the team's work." },
-  { key: "risk",           label: "Take risks",             help: "Core leaders take risks, try things that might fail." },
-  { key: "following",      label: "Develop a following",    help: "Each core leader has a base of leaders they're developing and leveraging." },
-  { key: "coown",          label: "Co-own the strategy",    help: "Core leaders co-own and co-create the strategy or campaign with their organizer." },
+  { key: "responsibility", label: "Take responsibility",       help: "Core leaders consistently take responsibility for the team's work." },
+  { key: "wantPower",      label: "Leaders want power",        help: "The leaders on this team have an appetite to take on a consequential power mission (campaigns with real consequences)." },
+  { key: "following",      label: "Connected to a following",  help: "Each core leader has a base of leaders they're developing and leveraging." },
+  { key: "coown",          label: "Co-own the strategy",       help: "Core leaders co-own and co-create the strategy or campaign with their organizer." },
 ];
 
-// "Leaders with agency" was jargony for Lisa — broken into two concrete prompts.
-// Belonging stays. The standalone agency instrument (in development with Miriam) will
-// eventually replace these with validated multi-item measures.
+// Agency wording aligned with Lisa's worksheet definition — collective actors,
+// not just individual belief in change. The standalone agency instrument
+// (in development with Miriam) will eventually replace this with a validated
+// multi-item scale.
 const RIGHT_PEOPLE_LIKERTS = [
-  { key: "politicalChange",       label: "Belief in political change",
-    help: "Leaders believe they can make the political change they want to see." },
-  { key: "consequentialDecisions", label: "Consequential decisions in the org",
-    help: "Leaders feel like they can make consequential decisions in the organization." },
-  { key: "belonging",             label: "Belonging",
+  { key: "politicalChange", label: "Agency",
+    help: "Leaders believe they can create public political change and act on this belief in their communities. Leaders see themselves as collective actors in remaking the world around them." },
+  { key: "belonging",       label: "Belonging",
     help: "People feel like they belong; participating in organizing is an added value to their life." },
 ];
 
@@ -1019,8 +1018,8 @@ const seedTeams = () => ([
     organizer: "Devon Mills",
     monthsActive: 24,
     coreLeaders: 5, members: 18, activeVolunteers: 34,
-    responsibility: 5, risk: 5, following: 5, coown: 5,
-    politicalChange: 5, consequentialDecisions: 5, belonging: 5,
+    responsibility: 5, wantPower: 5, following: 5, coown: 5,
+    politicalChange: 5, belonging: 5,
     boundedMembership: true,
     meetsMonthly: true,
     stableFullCycle: true, attendancePct: 88,
@@ -1029,6 +1028,11 @@ const seedTeams = () => ([
     mediumTermPlan: true, planBrief: "Just-cause eviction ordinance, council vote Aug",
     powerPlay: true, powerPlayBrief: "May rally + commitment cards from 3 council members",
     fedRepresented: true,
+    consequentialMission: true, consequentialMissionBrief: "Just-cause eviction ordinance",
+    retention1yr: true, researchMeeting3mo: true, publicAction1yr: true,
+    canTurnOut: true, turnoutBrief: "300 tenants at April council hearing",
+    policyWin2yr: true, policyWinBrief: "Won $12M in rental relief, 2024",
+    prospectiveGoals: "Pass just-cause eviction ordinance by Aug council vote; 5 new core leaders.",
     lat: 37.80, lng: -122.27,
     gridX: 0, gridY: 0,
   },
@@ -1041,8 +1045,8 @@ const seedTeams = () => ([
     organizer: "Marisol Vega",
     monthsActive: 20,
     coreLeaders: 4, members: 14, activeVolunteers: 28,
-    responsibility: 5, risk: 4, following: 5, coown: 5,
-    politicalChange: 4, consequentialDecisions: 5, belonging: 5,
+    responsibility: 5, wantPower: 4, following: 5, coown: 5,
+    politicalChange: 4, belonging: 5,
     boundedMembership: true,
     meetsMonthly: true,
     stableFullCycle: true, attendancePct: 82,
@@ -1051,6 +1055,11 @@ const seedTeams = () => ([
     mediumTermPlan: true, planBrief: "Education equity, state budget May vote",
     powerPlay: true, powerPlayBrief: "Sacramento delegation meeting w/ assembly leadership",
     fedRepresented: true,
+    consequentialMission: true, consequentialMissionBrief: "Education equity in state budget",
+    retention1yr: true, researchMeeting3mo: true, publicAction1yr: true,
+    canTurnOut: true, turnoutBrief: "225 to Sacramento delegation day",
+    policyWin2yr: true, policyWinBrief: "Secured LCFF concentration-grant increase, 2024",
+    prospectiveGoals: "Win $400M education-equity allocation in May budget vote.",
     lat: 38.58, lng: -121.49,
     gridX: 0, gridY: 0,
   },
@@ -1063,8 +1072,8 @@ const seedTeams = () => ([
     organizer: "Anita Reyes",
     monthsActive: 14,
     coreLeaders: 1, members: 16, activeVolunteers: 22,
-    responsibility: 2, risk: 2, following: 2, coown: 2,
-    politicalChange: 3, consequentialDecisions: 3, belonging: 4,
+    responsibility: 2, wantPower: 2, following: 2, coown: 2,
+    politicalChange: 3, belonging: 4,
     boundedMembership: true,
     meetsMonthly: true,
     stableFullCycle: true, attendancePct: 70,
@@ -1073,6 +1082,11 @@ const seedTeams = () => ([
     mediumTermPlan: true, planBrief: "LAUSD facilities equity, fall school board push",
     powerPlay: true, powerPlayBrief: "Targeted board member 1:1s + mass meeting",
     fedRepresented: true,
+    consequentialMission: true, consequentialMissionBrief: "LAUSD facilities equity",
+    retention1yr: true, researchMeeting3mo: true, publicAction1yr: false,
+    canTurnOut: false, turnoutBrief: "",
+    policyWin2yr: false, policyWinBrief: "",
+    prospectiveGoals: "Deliver Roosevelt HS facilities audit to LAUSD board by fall.",
     lat: 34.03, lng: -118.21,
     gridX: 0, gridY: 0,
   },
@@ -1085,8 +1099,8 @@ const seedTeams = () => ([
     organizer: "Marisol Vega",
     monthsActive: 10,
     coreLeaders: 2, members: 13, activeVolunteers: 18,
-    responsibility: 4, risk: 2, following: 2, coown: 2,
-    politicalChange: 3, consequentialDecisions: 3, belonging: 4,
+    responsibility: 4, wantPower: 2, following: 2, coown: 2,
+    politicalChange: 3, belonging: 4,
     boundedMembership: true,
     meetsMonthly: true,
     stableFullCycle: false, attendancePct: 72,
@@ -1095,6 +1109,11 @@ const seedTeams = () => ([
     mediumTermPlan: true, planBrief: "Wage-theft ordinance, fall supervisors push",
     powerPlay: false, powerPlayBrief: "",
     fedRepresented: true,
+    consequentialMission: false, consequentialMissionBrief: "",
+    retention1yr: false, researchMeeting3mo: true, publicAction1yr: false,
+    canTurnOut: false, turnoutBrief: "",
+    policyWin2yr: false, policyWinBrief: "",
+    prospectiveGoals: "",
     lat: 37.76, lng: -122.42,
     gridX: 0, gridY: 0,
   },
@@ -1107,8 +1126,8 @@ const seedTeams = () => ([
     organizer: "James Okafor",
     monthsActive: 16,
     coreLeaders: 4, members: 11, activeVolunteers: 26,
-    responsibility: 4, risk: 4, following: 4, coown: 4,
-    politicalChange: 4, consequentialDecisions: 4, belonging: 4,
+    responsibility: 4, wantPower: 4, following: 4, coown: 4,
+    politicalChange: 4, belonging: 4,
     boundedMembership: true,
     meetsMonthly: true,
     stableFullCycle: true, attendancePct: 78,
@@ -1117,6 +1136,11 @@ const seedTeams = () => ([
     mediumTermPlan: false, planBrief: "",
     powerPlay: false, powerPlayBrief: "",
     fedRepresented: false,
+    consequentialMission: false, consequentialMissionBrief: "",
+    retention1yr: true, researchMeeting3mo: false, publicAction1yr: true,
+    canTurnOut: true, turnoutBrief: "150 workers to March rally",
+    policyWin2yr: false, policyWinBrief: "",
+    prospectiveGoals: "",
     lat: 36.74, lng: -119.78,
     gridX: 0, gridY: 0,
   },
@@ -1129,8 +1153,8 @@ const seedTeams = () => ([
     organizer: "Anita Reyes",
     monthsActive: 5,
     coreLeaders: 1, members: 5, activeVolunteers: 9,
-    responsibility: 1, risk: 1, following: 1, coown: 1,
-    politicalChange: 2, consequentialDecisions: 2, belonging: 3,
+    responsibility: 1, wantPower: 1, following: 1, coown: 1,
+    politicalChange: 2, belonging: 3,
     boundedMembership: false,
     meetsMonthly: false,
     stableFullCycle: false, attendancePct: 35,
@@ -1139,6 +1163,11 @@ const seedTeams = () => ([
     mediumTermPlan: false, planBrief: "",
     powerPlay: false, powerPlayBrief: "",
     fedRepresented: false,
+    consequentialMission: false, consequentialMissionBrief: "",
+    retention1yr: false, researchMeeting3mo: false, publicAction1yr: false,
+    canTurnOut: false, turnoutBrief: "",
+    policyWin2yr: false, policyWinBrief: "",
+    prospectiveGoals: "",
     lat: 32.65, lng: -117.08,
     gridX: 0, gridY: 0,
   },
@@ -1347,10 +1376,10 @@ function TeamForm({ initial, onCommit, onCancel, crmConnected }) {
     name: "", constituencyType: "congregation", constituencyDetail: "",
     organizer: "", monthsActive: 0,
     coreLeaders: 0, members: 0, activeVolunteers: 0,
-    // Core-leader practice: now 1-5 likerts, default 3 (middle)
-    responsibility: 3, risk: 3, following: 3, coown: 3,
-    // Right-people likerts (replaced "agency" with the two concrete prompts Lisa wanted)
-    politicalChange: 3, consequentialDecisions: 3, belonging: 3,
+    // Core-leader practice: 1-5 likerts, default 3 (middle)
+    responsibility: 3, wantPower: 3, following: 3, coown: 3,
+    // Right-people likerts (Agency + Belonging)
+    politicalChange: 3, belonging: 3,
     boundedMembership: false,
     meetsMonthly: false,
     stableFullCycle: false,
@@ -1359,7 +1388,15 @@ function TeamForm({ initial, onCommit, onCancel, crmConnected }) {
     powerOrientation: 3, missionClarity: 3, strategyPlace: 3,
     mediumTermPlan: false, planBrief: "",
     powerPlay: false, powerPlayBrief: "",
+    consequentialMission: false, consequentialMissionBrief: "",
     fedRepresented: false,
+    // Evidence of effectiveness — concrete indicators, not self-report
+    retention1yr: false,
+    researchMeeting3mo: false,
+    publicAction1yr: false,
+    canTurnOut: false, turnoutBrief: "",
+    policyWin2yr: false, policyWinBrief: "",
+    prospectiveGoals: "",
     lat: null, lng: null,
     gridX: 0, gridY: 0,
   };
@@ -1411,7 +1448,7 @@ function TeamForm({ initial, onCommit, onCancel, crmConnected }) {
         </div>
         <div className="field-row">
           <div className="field">
-            <FieldLabel prov={PROVENANCE.CRM}>Constituency detail</FieldLabel>
+            <FieldLabel prov={PROVENANCE.CRM}>Constituency name</FieldLabel>
             <input className={crmClass(draft.constituencyDetail)} value={draft.constituencyDetail}
                    onChange={e => set("constituencyDetail", e.target.value)}
                    placeholder="Which congregation / school / block?" />
@@ -1461,7 +1498,7 @@ function TeamForm({ initial, onCommit, onCancel, crmConnected }) {
                    onChange={e => setNum("members", e.target.value)} />
           </div>
           <div className="field">
-            <FieldLabel prov={PROVENANCE.CRM}>Active vols.</FieldLabel>
+            <FieldLabel prov={PROVENANCE.CRM}>Organizing members</FieldLabel>
             <input type="number" min="0" className={crmClass(draft.activeVolunteers)}
                    value={draft.activeVolunteers}
                    onChange={e => setNum("activeVolunteers", e.target.value)} />
@@ -1519,7 +1556,7 @@ function TeamForm({ initial, onCommit, onCancel, crmConnected }) {
         </div>
 
         <div className="field">
-          <FieldLabel prov={PROVENANCE.CRM}>Attendance consistency (% of members who attended more than 50% of meetings)</FieldLabel>
+          <FieldLabel prov={PROVENANCE.CRM}>What % of members attend more than half of meetings</FieldLabel>
           <input type="number" min="0" max="100" className={crmClass(draft.attendancePct)}
                  value={draft.attendancePct}
                  onChange={e => setNum("attendancePct", e.target.value)} />
@@ -1561,18 +1598,84 @@ function TeamForm({ initial, onCommit, onCancel, crmConnected }) {
         </div>
 
         <div className="field">
-          <FieldLabel prov={PROVENANCE.SELF}>Has a power play to get something they want</FieldLabel>
+          <FieldLabel prov={PROVENANCE.SELF}>Has identified a clear issue and target for their campaign</FieldLabel>
           <YesNo value={draft.powerPlay} onChange={v => set("powerPlay", v)} />
           {draft.powerPlay && (
             <textarea style={{marginTop: 8}} value={draft.powerPlayBrief}
                       onChange={e => set("powerPlayBrief", e.target.value)}
-                      placeholder="What's the play?" />
+                      placeholder="Issue + target (e.g., $2M for after-school programs, City Council)" />
+          )}
+        </div>
+
+        <div className="field">
+          <FieldLabel prov={PROVENANCE.SELF}>The team has a consequential mission they are responsible for</FieldLabel>
+          <YesNo value={draft.consequentialMission} onChange={v => set("consequentialMission", v)} />
+          {draft.consequentialMission && (
+            <textarea style={{marginTop: 8}} value={draft.consequentialMissionBrief}
+                      onChange={e => set("consequentialMissionBrief", e.target.value)}
+                      placeholder="What is the mission?" />
           )}
         </div>
 
         <div className="field">
           <FieldLabel prov={PROVENANCE.CRM}>Represented at federation strategy meetings</FieldLabel>
           <YesNo value={draft.fedRepresented} onChange={v => set("fedRepresented", v)} />
+        </div>
+      </div>
+
+      {/* Evidence of effectiveness — CRM-verified, prospectively documented.
+          Explicit design principle: not Likert self-report; teams must name concrete
+          wins and (ideally) document goals prospectively so we're not measuring
+          post-hoc rationalization. */}
+      <div className="form-subsection">
+        <div className="form-subsection-title">Evidence of effectiveness</div>
+        <div className="form-subsection-sub">
+          <strong>Concrete indicators only.</strong> If your team doesn't move to action, the other stuff doesn't matter as much. These items are CRM-verifiable or require a named win. This section is <em>not</em> Likert self-report — no scoring your own effectiveness on a 1-5. Goals should be documented at the start of a cycle so we're measuring outcomes against prior commitments, not post-hoc rationalization.
+        </div>
+
+        <div className="field">
+          <FieldLabel prov={PROVENANCE.CRM}>Any team member has stayed involved &gt; 1 year</FieldLabel>
+          <YesNo value={draft.retention1yr} onChange={v => set("retention1yr", v)} />
+        </div>
+
+        <div className="field">
+          <FieldLabel prov={PROVENANCE.CRM}>Team hosted a research meeting in the past 3 months</FieldLabel>
+          <YesNo value={draft.researchMeeting3mo} onChange={v => set("researchMeeting3mo", v)} />
+        </div>
+
+        <div className="field">
+          <FieldLabel prov={PROVENANCE.CRM}>Team hosted a public action in the past year</FieldLabel>
+          <YesNo value={draft.publicAction1yr} onChange={v => set("publicAction1yr", v)} />
+        </div>
+
+        <div className="field">
+          <FieldLabel prov={PROVENANCE.CRM}>Team can turn out people from their community to action</FieldLabel>
+          <YesNo value={draft.canTurnOut} onChange={v => set("canTurnOut", v)} />
+          {draft.canTurnOut && (
+            <textarea style={{marginTop: 8}} value={draft.turnoutBrief}
+                      onChange={e => set("turnoutBrief", e.target.value)}
+                      placeholder="Most recent turnout (event + count)" />
+          )}
+        </div>
+
+        <div className="field">
+          <FieldLabel prov={PROVENANCE.CRM}>Delivered or substantially contributed to a policy win in the past 2 years</FieldLabel>
+          <YesNo value={draft.policyWin2yr} onChange={v => set("policyWin2yr", v)} />
+          {draft.policyWin2yr && (
+            <textarea style={{marginTop: 8}} value={draft.policyWinBrief}
+                      onChange={e => set("policyWinBrief", e.target.value)}
+                      placeholder="Named the win + team's role" />
+          )}
+        </div>
+
+        <div className="field">
+          <FieldLabel prov={PROVENANCE.SELF}>Goals documented prospectively for this cycle</FieldLabel>
+          <p className="note-line" style={{marginTop: 0, marginBottom: 6}}>
+            What did the team commit to at the start of this cycle? Fill this at the beginning, not the end. If this is empty at the end, we can't score effectiveness for this cycle.
+          </p>
+          <textarea value={draft.prospectiveGoals}
+                    onChange={e => set("prospectiveGoals", e.target.value)}
+                    placeholder="e.g., win $2M for after-school programs from City Council by June; add 3 new core leaders" />
         </div>
       </div>
 
