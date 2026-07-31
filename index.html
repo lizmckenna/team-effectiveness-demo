@@ -924,6 +924,20 @@ async function loadLatestSnapshotFromSupabase(orgName) {
 
 /* ========= Static config ========= */
 
+// PICO California federations. Filter dropdown pulls from this list.
+// Blank + "Other" let orgs not on this list still enter teams.
+const FEDERATIONS = [
+  "SDOP",
+  "LA Voice",
+  "ICUC",
+  "Faith in the Valley",
+  "PACT",
+  "Faith in Action Bay Area",
+  "Faith in Action East Bay",
+  "SacACT",
+  "True North",
+];
+
 const CONSTITUENCY_TYPES = [
   { value: "congregation", label: "Congregation" },
   { value: "school",       label: "School / parent body" },
@@ -1015,6 +1029,7 @@ const seedTeams = () => ([
     /* Upper-right · Effective, high RP + RT + CP */
     id: "t1",
     name: "Westside Tenants United",
+    federation: "Faith in Action East Bay",
     constituencyType: "neighborhood",
     constituencyDetail: "West Oakland",
     organizer: "Devon Mills",
@@ -1042,6 +1057,7 @@ const seedTeams = () => ([
     /* Upper-right · Effective, second example to anchor that quadrant */
     id: "t2",
     name: "Capital Area Faith Coalition",
+    federation: "SacACT",
     constituencyType: "congregation",
     constituencyDetail: "Six Sacramento congregations",
     organizer: "Marisol Vega",
@@ -1069,6 +1085,7 @@ const seedTeams = () => ([
     /* Upper-left · Develop core leaders, strategic but organizer-dependent */
     id: "t3",
     name: "Boyle Heights Parent Council",
+    federation: "LA Voice",
     constituencyType: "school",
     constituencyDetail: "Roosevelt HS attendance zone, East LA",
     organizer: "Anita Reyes",
@@ -1096,6 +1113,7 @@ const seedTeams = () => ([
     /* Upper-left · Develop core leaders, second example */
     id: "t4",
     name: "Mission District Workers",
+    federation: "Faith in Action Bay Area",
     constituencyType: "workplace",
     constituencyDetail: "Service-sector workers, SF Mission",
     organizer: "Marisol Vega",
@@ -1123,6 +1141,7 @@ const seedTeams = () => ([
     /* Lower-right · Coach into strategy, distributed but mobilizing, not organizing */
     id: "t5",
     name: "Central Valley Workers Action",
+    federation: "Faith in the Valley",
     constituencyType: "workplace",
     constituencyDetail: "Ag and food-processing workers, Fresno-Madera",
     organizer: "James Okafor",
@@ -1150,6 +1169,7 @@ const seedTeams = () => ([
     /* Lower-left · Restart / rebuild, low on everything */
     id: "t6",
     name: "South Bay Tenants Network",
+    federation: "SDOP",
     constituencyType: "neighborhood",
     constituencyDetail: "Chula Vista and National City",
     organizer: "Anita Reyes",
@@ -1375,7 +1395,7 @@ function CheckList({ items, values, onToggle }) {
 
 function TeamForm({ initial, onCommit, onCancel, crmConnected }) {
   const blank = {
-    name: "", constituencyType: "congregation", constituencyDetail: "",
+    name: "", federation: "", constituencyType: "congregation", constituencyDetail: "",
     organizer: "", monthsActive: 0,
     coreLeaders: 0, members: 0, activeVolunteers: 0,
     // Core-leader practice: 1-5 likerts, default 3 (middle)
@@ -1435,10 +1455,11 @@ function TeamForm({ initial, onCommit, onCancel, crmConnected }) {
         </div>
         <div className="field-row">
           <div className="field">
-            <FieldLabel prov={PROVENANCE.CRM}>Constituency type</FieldLabel>
-            <select className={crmClass(draft.constituencyType)} value={draft.constituencyType}
-                    onChange={e => set("constituencyType", e.target.value)}>
-              {CONSTITUENCY_TYPES.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
+            <FieldLabel prov={PROVENANCE.CRM}>Federation</FieldLabel>
+            <select className={crmClass(draft.federation)} value={draft.federation || ""}
+                    onChange={e => set("federation", e.target.value)}>
+              <option value="">— select federation —</option>
+              {FEDERATIONS.map(f => <option key={f} value={f}>{f}</option>)}
             </select>
           </div>
           <div className="field">
@@ -1450,10 +1471,11 @@ function TeamForm({ initial, onCommit, onCancel, crmConnected }) {
         </div>
         <div className="field-row">
           <div className="field">
-            <FieldLabel prov={PROVENANCE.CRM}>Constituency name</FieldLabel>
-            <input className={crmClass(draft.constituencyDetail)} value={draft.constituencyDetail}
-                   onChange={e => set("constituencyDetail", e.target.value)}
-                   placeholder="Which congregation / school / block?" />
+            <FieldLabel prov={PROVENANCE.CRM}>Constituency type</FieldLabel>
+            <select className={crmClass(draft.constituencyType)} value={draft.constituencyType}
+                    onChange={e => set("constituencyType", e.target.value)}>
+              {CONSTITUENCY_TYPES.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
+            </select>
           </div>
           <div className="field">
             <FieldLabel prov={PROVENANCE.CRM}>Months active</FieldLabel>
@@ -1461,6 +1483,12 @@ function TeamForm({ initial, onCommit, onCancel, crmConnected }) {
                    value={draft.monthsActive}
                    onChange={e => setNum("monthsActive", e.target.value)} />
           </div>
+        </div>
+        <div className="field">
+          <FieldLabel prov={PROVENANCE.CRM}>Constituency name</FieldLabel>
+          <input className={crmClass(draft.constituencyDetail)} value={draft.constituencyDetail}
+                 onChange={e => set("constituencyDetail", e.target.value)}
+                 placeholder="Which congregation / school / block?" />
         </div>
         <div className="field-row">
           <div className="field">
@@ -1846,14 +1874,17 @@ function ScorecardView({ teams }) {
   // Default sort by team name so the page opens on alphabetical variation,
   // not a pre-ranked Health Index that hides the spread.
   const [sortKey, setSortKey] = useState("name");
-  const [orgFilter, setOrgFilter] = useState("all");
+  const [fedFilter, setFedFilter] = useState("all");
   const [organizerFilter, setOrganizerFilter] = useState("all");
 
-  const orgs = Array.from(new Set(teams.map(t => t.constituencyDetail).filter(Boolean))).sort();
+  // Filter dropdown values sourced from the actual data in view, so filters
+  // only offer federations/organizers that are present. FEDERATIONS constant
+  // is the canonical PICO list; teams may leave it blank until assigned.
+  const feds = Array.from(new Set(teams.map(t => t.federation).filter(Boolean))).sort();
   const organizers = Array.from(new Set(teams.map(t => t.organizer).filter(Boolean))).sort();
 
   const filtered = teams.filter(t =>
-    (orgFilter === "all" || t.constituencyDetail === orgFilter) &&
+    (fedFilter === "all" || t.federation === fedFilter) &&
     (organizerFilter === "all" || t.organizer === organizerFilter)
   );
   const sorted = [...filtered].sort((a, b) => {
@@ -1877,10 +1908,10 @@ function ScorecardView({ teams }) {
             <option value="cp">Compelling Purpose</option>
           </select>
         </span>
-        <span className="grp">Organization
-          <select value={orgFilter} onChange={e => setOrgFilter(e.target.value)}>
-            <option value="all">All ({orgs.length})</option>
-            {orgs.map(o => <option key={o} value={o}>{o}</option>)}
+        <span className="grp">Federation
+          <select value={fedFilter} onChange={e => setFedFilter(e.target.value)}>
+            <option value="all">All ({feds.length})</option>
+            {feds.map(f => <option key={f} value={f}>{f}</option>)}
           </select>
         </span>
         <span className="grp">Organizer
