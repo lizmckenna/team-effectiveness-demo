@@ -504,12 +504,14 @@
   .score-tag.flag { color: var(--terracotta); border-color: var(--terracotta-soft); }
   .score-tag.ok { color: var(--olive); border-color: var(--olive); }
   .sortbar {
-    display: flex; align-items: center; gap: 10px;
+    display: flex; align-items: center; gap: 14px;
+    flex-wrap: wrap;
     font-family: var(--mono); font-size: 10px; font-weight: 500;
     letter-spacing: 0.12em; text-transform: uppercase;
     color: var(--mute);
     margin-bottom: 18px;
   }
+  .sortbar .grp { display: inline-flex; align-items: center; gap: 6px; }
   .sortbar select {
     font-family: var(--mono); font-size: 10px;
     background: var(--paper); border: 1px solid var(--rule);
@@ -1029,7 +1031,7 @@ const seedTeams = () => ([
     powerPlay: true, powerPlayBrief: "May rally + commitment cards from 3 council members",
     fedRepresented: true,
     consequentialMission: true, consequentialMissionBrief: "Just-cause eviction ordinance",
-    retention1yr: true, researchMeeting3mo: true, publicAction1yr: true,
+    retentionPct1yr: 82, researchMeeting3mo: true, publicAction1yr: true,
     canTurnOut: true, turnoutBrief: "300 tenants at April council hearing",
     policyWin2yr: true, policyWinBrief: "Won $12M in rental relief, 2024",
     prospectiveGoals: "Pass just-cause eviction ordinance by Aug council vote; 5 new core leaders.",
@@ -1056,7 +1058,7 @@ const seedTeams = () => ([
     powerPlay: true, powerPlayBrief: "Sacramento delegation meeting w/ assembly leadership",
     fedRepresented: true,
     consequentialMission: true, consequentialMissionBrief: "Education equity in state budget",
-    retention1yr: true, researchMeeting3mo: true, publicAction1yr: true,
+    retentionPct1yr: 78, researchMeeting3mo: true, publicAction1yr: true,
     canTurnOut: true, turnoutBrief: "225 to Sacramento delegation day",
     policyWin2yr: true, policyWinBrief: "Secured LCFF concentration-grant increase, 2024",
     prospectiveGoals: "Win $400M education-equity allocation in May budget vote.",
@@ -1083,7 +1085,7 @@ const seedTeams = () => ([
     powerPlay: true, powerPlayBrief: "Targeted board member 1:1s + mass meeting",
     fedRepresented: true,
     consequentialMission: true, consequentialMissionBrief: "LAUSD facilities equity",
-    retention1yr: true, researchMeeting3mo: true, publicAction1yr: false,
+    retentionPct1yr: 65, researchMeeting3mo: true, publicAction1yr: false,
     canTurnOut: false, turnoutBrief: "",
     policyWin2yr: false, policyWinBrief: "",
     prospectiveGoals: "Deliver Roosevelt HS facilities audit to LAUSD board by fall.",
@@ -1110,7 +1112,7 @@ const seedTeams = () => ([
     powerPlay: false, powerPlayBrief: "",
     fedRepresented: true,
     consequentialMission: false, consequentialMissionBrief: "",
-    retention1yr: false, researchMeeting3mo: true, publicAction1yr: false,
+    retentionPct1yr: 40, researchMeeting3mo: true, publicAction1yr: false,
     canTurnOut: false, turnoutBrief: "",
     policyWin2yr: false, policyWinBrief: "",
     prospectiveGoals: "",
@@ -1137,7 +1139,7 @@ const seedTeams = () => ([
     powerPlay: false, powerPlayBrief: "",
     fedRepresented: false,
     consequentialMission: false, consequentialMissionBrief: "",
-    retention1yr: true, researchMeeting3mo: false, publicAction1yr: true,
+    retentionPct1yr: 70, researchMeeting3mo: false, publicAction1yr: true,
     canTurnOut: true, turnoutBrief: "150 workers to March rally",
     policyWin2yr: false, policyWinBrief: "",
     prospectiveGoals: "",
@@ -1164,7 +1166,7 @@ const seedTeams = () => ([
     powerPlay: false, powerPlayBrief: "",
     fedRepresented: false,
     consequentialMission: false, consequentialMissionBrief: "",
-    retention1yr: false, researchMeeting3mo: false, publicAction1yr: false,
+    retentionPct1yr: 15, researchMeeting3mo: false, publicAction1yr: false,
     canTurnOut: false, turnoutBrief: "",
     policyWin2yr: false, policyWinBrief: "",
     prospectiveGoals: "",
@@ -1391,7 +1393,7 @@ function TeamForm({ initial, onCommit, onCancel, crmConnected }) {
     consequentialMission: false, consequentialMissionBrief: "",
     fedRepresented: false,
     // Evidence of effectiveness — concrete indicators, not self-report
-    retention1yr: false,
+    retentionPct1yr: 0,
     researchMeeting3mo: false,
     publicAction1yr: false,
     canTurnOut: false, turnoutBrief: "",
@@ -1634,8 +1636,10 @@ function TeamForm({ initial, onCommit, onCancel, crmConnected }) {
         </div>
 
         <div className="field">
-          <FieldLabel prov={PROVENANCE.CRM}>Any team member has stayed involved &gt; 1 year</FieldLabel>
-          <YesNo value={draft.retention1yr} onChange={v => set("retention1yr", v)} />
+          <FieldLabel prov={PROVENANCE.CRM}>% of team members involved ≥ 1 year</FieldLabel>
+          <input type="number" min="0" max="100" className={crmClass(draft.retentionPct1yr)}
+                 value={draft.retentionPct1yr}
+                 onChange={e => setNum("retentionPct1yr", e.target.value)} />
         </div>
 
         <div className="field">
@@ -1842,7 +1846,17 @@ function ScorecardView({ teams }) {
   // Default sort by team name so the page opens on alphabetical variation,
   // not a pre-ranked Health Index that hides the spread.
   const [sortKey, setSortKey] = useState("name");
-  const sorted = [...teams].sort((a, b) => {
+  const [orgFilter, setOrgFilter] = useState("all");
+  const [organizerFilter, setOrganizerFilter] = useState("all");
+
+  const orgs = Array.from(new Set(teams.map(t => t.constituencyDetail).filter(Boolean))).sort();
+  const organizers = Array.from(new Set(teams.map(t => t.organizer).filter(Boolean))).sort();
+
+  const filtered = teams.filter(t =>
+    (orgFilter === "all" || t.constituencyDetail === orgFilter) &&
+    (organizerFilter === "all" || t.organizer === organizerFilter)
+  );
+  const sorted = [...filtered].sort((a, b) => {
     const sa = scoreTeam(a), sb = scoreTeam(b);
     if (sortKey === "hi") return sb.hi - sa.hi;
     if (sortKey === "rp") return sb.rp - sa.rp;
@@ -1854,15 +1868,28 @@ function ScorecardView({ teams }) {
   return (
     <div>
       <div className="sortbar">
-        <span>Sort by</span>
-        <select value={sortKey} onChange={e => setSortKey(e.target.value)}>
-          <option value="name">Team name</option>
-          <option value="hi">Team Health Index</option>
-          <option value="rp">Right People</option>
-          <option value="rt">Real Team</option>
-          <option value="cp">Compelling Purpose</option>
-        </select>
-        <span style={{marginLeft: "auto"}}>{teams.length} teams</span>
+        <span className="grp">Sort by
+          <select value={sortKey} onChange={e => setSortKey(e.target.value)}>
+            <option value="name">Team name</option>
+            <option value="hi">Team Health Index</option>
+            <option value="rp">Right People</option>
+            <option value="rt">Real Team</option>
+            <option value="cp">Compelling Purpose</option>
+          </select>
+        </span>
+        <span className="grp">Organization
+          <select value={orgFilter} onChange={e => setOrgFilter(e.target.value)}>
+            <option value="all">All ({orgs.length})</option>
+            {orgs.map(o => <option key={o} value={o}>{o}</option>)}
+          </select>
+        </span>
+        <span className="grp">Organizer
+          <select value={organizerFilter} onChange={e => setOrganizerFilter(e.target.value)}>
+            <option value="all">All ({organizers.length})</option>
+            {organizers.map(o => <option key={o} value={o}>{o}</option>)}
+          </select>
+        </span>
+        <span style={{marginLeft: "auto"}}>{sorted.length} of {teams.length} teams</span>
       </div>
       {teams.length === 0 ? (
         <div className="empty">No teams yet. Add one in the left pane.</div>
